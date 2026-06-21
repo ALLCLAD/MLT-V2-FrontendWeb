@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+@plugin "daisyui";
+
+
+:root {
+    --p: 230 100% 50%;
+}
+
