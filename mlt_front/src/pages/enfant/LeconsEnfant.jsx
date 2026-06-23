@@ -26,7 +26,7 @@ const LeconsEnfant = () => {
     const fetchLecons = async () => {
         try {
             setLoading(true);
-            const response = await api.get('/auth/enfant/lecons/');
+            const response = await api.get('/enseignant/enfant/lecons/');
             setLecons(response.data);
         } catch (err) {
             console.error("Erreur récupération leçons:", err);

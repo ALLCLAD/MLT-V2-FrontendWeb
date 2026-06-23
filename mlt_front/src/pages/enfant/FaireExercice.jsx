@@ -39,8 +39,8 @@ const FaireExercice = () => {
             try {
                 setLoading(true);
                 const [resEx, resLecon] = await Promise.all([
-                    api.get(`/auth/enfant/lecons/${id}/exercices/`),
-                    api.get(`/auth/enfant/lecons/${id}/`)
+                    api.get(`/enseignant/enfant/lecons/${id}/exercices/`),
+                    api.get(`/enseignant/enfant/lecons/${id}/`)
                 ]);
                 setExercices(resEx.data);
                 setLeconTitre(resLecon.data.titre || 'une leçon');
