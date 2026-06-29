@@ -1,23 +1,21 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Bell, BookOpen, MessageSquare, CheckCircle2, Trash2, Loader2, Calendar } from 'lucide-react';
 import api from '../../apiDjango/api.jsx';
 import { useCommunication } from '../../contexte/CommunicationContext.jsx';
 
 const NotificationsEnfant = () => {
-    const [notifs, setNotifs] = useState([]);
     const [loading, setLoading] = useState(true);
-    const { setUnreadCount } = useCommunication();
 
-    const fetchNotifs = async () => {
-        try {
-            const res = await api.get('/communication/notifications/');
-            setNotifs(res.data);
-            setUnreadCount(res.data.filter(n => !n.est_lu).length);
-        } catch (err) { console.error(err); }
-        finally { setLoading(false); }
-    };
+    // 🔥 ON CONSOMME LES NOTIFS ET FONCTIONS DU CONTEXTE GLOBAL ICI 🔥
+    const { notifs, setNotifs, setUnreadCount, fetchInitialNotifs } = useCommunication();
 
-    useEffect(() => { fetchNotifs(); }, []);
+    useEffect(() => {
+        const loadData = async () => {
+            await fetchInitialNotifs();
+            setLoading(false);
+        };
+        loadData();
+    }, []);
 
     const markAsRead = async (id) => {
         try {
@@ -40,7 +38,8 @@ const NotificationsEnfant = () => {
     const deleteAllNotifs = async () => {
         if (!window.confirm("Veux-tu vraiment supprimer toutes tes notifications ?")) return;
         try {
-            await api.post('/communication/notifications/tout-supprimer/');
+            // Alignment avec le nouveau backend (méthode POST avec body action)
+            await api.post('/communication/notifications/', { action: 'tout-supprimer' });
             setNotifs([]);
             setUnreadCount(0);
         } catch (err) { console.error(err); }
@@ -48,7 +47,8 @@ const NotificationsEnfant = () => {
 
     const markAllAsRead = async () => {
         try {
-            await api.post('/communication/notifications/tout-lire/');
+            // Alignment avec le nouveau backend (méthode POST avec body action)
+            await api.post('/communication/notifications/', { action: 'tout-lire' });
             setNotifs(prev => prev.map(n => ({ ...n, est_lu: true })));
             setUnreadCount(0);
         } catch (err) { console.error(err); }

@@ -16,11 +16,10 @@ export const CommunicationProvider = ({ children }) => {
         try {
             const res = await api.get('/communication/notifications/');
             setNotifs(res.data);
-            // On calcule le compteur sur la totalité des data reçues
             const nonLues = res.data.filter(n => !n.est_lu).length;
             setUnreadCount(nonLues);
         } catch (err) {
-            console.error("Erreur chargement:", err);
+            console.error("Erreur chargement notifications initiales:", err);
         }
     };
 
@@ -30,36 +29,33 @@ export const CommunicationProvider = ({ children }) => {
         const token = localStorage.getItem(ACCESS_TOKEN);
         if (!token) return;
 
-        // Connexion au WebSocket
+        // Connexion au canal global de notification temps réel
         const wsUrl = `ws://localhost:8000/ws/notifications/?token=${token}`;
         socket.current = new WebSocket(wsUrl);
 
         socket.current.onmessage = (event) => {
             const data = JSON.parse(event.data);
 
-            // OPTIMISATION : On vérifie si la notif n'existe pas déjà (doublon)
+            // Éviter les doublons à l'insertion immédiate
             setNotifs(prev => {
                 const existe = prev.find(n => n.id === data.id);
                 if (existe) return prev;
                 return [data, ...prev];
             });
 
-            // On incrémente si elle n'est pas lue
             if (!data.est_lu) {
                 setUnreadCount(prev => prev + 1);
             }
         };
 
-        // Optionnel : Reconnexion automatique si déco
         socket.current.onclose = () => {
-            console.log("WebSocket déconnecté. Tentative de reconnexion...");
-            // Tu peux ajouter une logique de retry ici
+            console.log("WebSocket notifications déconnecté. Recherche de signal...");
         };
 
         return () => {
             if (socket.current) socket.current.close();
         };
-    }, []); // On ne le lance qu'une fois au démarrage de l'app
+    }, []);
 
     return (
         <CommunicationContext.Provider value={{ unreadCount, notifs, setNotifs, setUnreadCount, fetchInitialNotifs }}>
