@@ -33,9 +33,9 @@ export const getMathyFeedback = async (question, reponseUtilisateur, isCorrect, 
                     content: `Tu es Mathy, un tuteur IA chaleureux pour un enfant du primaire au Togo.
                     Ton ton : Très joyeux, motivant. Tu t'adresses directement à l'enfant par "tu".
                     REGLES :
-                    1. MODE INDICE : Donne une piste imagée (bonbons, jouets) sans donner la réponse.
-                    2. MODE FEEDBACK : Félicite ("Bravo champion !"), si faux dis "Oups, presque !", explique simplement.
-                    3. Format : 2 phrases courtes maximum + emojis.`
+                    1. MODE INDICE : Donne une piste imagée (bonbons, jouets) sans donner la réponse (1 phrase maximum).
+                    2. MODE FEEDBACK : Style Duolingo (très court et direct, max 10 mots). Si correct, félicite chaleureusement. Si incorrect, encourage positivement et donne un tout petit conseil simple (pas de longue explication).
+                    3. Format : 1 seule phrase très courte + emojis.`
                 },
                 {
                     role: "user",
@@ -105,6 +105,68 @@ export const genererContenuLecon = async (titre, description, classe) => {
         return completion.choices[0]?.message?.content;
     } catch (error) {
         console.error("Erreur Groq génération leçon:", error);
+        return null;
+    }
+};
+
+/**
+ * FONCTION 2b : Reformatage et amélioration d'un contenu de document importé (PDF/Word)
+ * Prend le texte brut extrait du document et le reformate en Markdown pédagogique
+ */
+export const genererContenuLeconDepuisDocument = async (titre, classe, documentText, consignes = '') => {
+    try {
+        // Limiter le texte extrait à 4000 caractères pour ne pas dépasser les tokens
+        const texteLimité = documentText.substring(0, 4000);
+
+        const completion = await groq.chat.completions.create({
+            messages: [
+                {
+                    role: "system",
+                    content: `Tu es Mathy, un tuteur expert pour la classe ${classe} au Togo.
+                    
+                    MISSION : Tu reçois un contenu brut extrait d'un document (PDF ou Word) fourni par un enseignant.
+                    Tu dois :
+                    1. Extraire les informations essentielles de ce contenu.
+                    2. Améliorer le style : rendre le texte clair, engageant et adapté aux enfants.
+                    3. Ajouter des exemples togolais concrets si possible (marché, francs CFA, prénoms).
+                    4. Structurer proprement en Markdown selon ce format :
+
+                    ## 1. Introduction
+                    (Phrase d'accroche)
+
+                    ## 2. Le concept
+                    (Explication simplifiée, 2-4 phrases max)
+
+                    ## 3. Exemples pour comprendre
+                    (1-2 exemples concrets avec listes à puces)
+
+                    ## 4. À retenir
+                    (2-3 points clés)
+
+                    CONTRAINTES :
+                    - Maximum 300 mots.
+                    - Parle directement à l'enfant avec "tu".
+                    - Garde uniquement les émojis simples (🎉, 💡, 📝).`
+                },
+                {
+                    role: "user",
+                    content: `Titre de la leçon : "${titre}"
+Niveau : ${classe}
+${consignes ? `Consignes de l'enseignant : ${consignes}\n` : ''}Contenu brut du document :
+---
+${texteLimité}
+---
+Réécris ce contenu en Markdown pédagogique clair.`
+                }
+            ],
+            model: "llama-3.3-70b-versatile",
+            temperature: 0.6,
+            max_tokens: 700,
+        });
+
+        return completion.choices[0]?.message?.content;
+    } catch (error) {
+        console.error("Erreur Groq reformatage document:", error);
         return null;
     }
 };

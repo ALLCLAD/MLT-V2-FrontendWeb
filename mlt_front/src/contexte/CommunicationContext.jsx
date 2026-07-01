@@ -30,7 +30,7 @@ export const CommunicationProvider = ({ children }) => {
         if (!token) return;
 
         // Connexion au canal global de notification temps réel
-        const wsUrl = `ws://localhost:8000/ws/notifications/?token=${token}`;
+        const wsUrl = `ws://localhost:8000/ws/notify/?token=${token}`;
         socket.current = new WebSocket(wsUrl);
 
         socket.current.onmessage = (event) => {

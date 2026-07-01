@@ -1,25 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, BookOpen, ClipboardList, Loader2, Clock, GraduationCap, Globe, EyeOff } from 'lucide-react';
-import api from '../../apiDjango/api.jsx';
-import ReactMarkdown from 'react-markdown';
+import React, { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { ArrowLeft, BookOpen, ClipboardList, Loader2, Clock, GraduationCap, Globe, EyeOff, Download, FileText, ChevronDown } from "lucide-react";
+import api from "../../apiDjango/api.jsx";
+import ReactMarkdown from "react-markdown";
 
 const DetailLecon = () => {
     const navigate = useNavigate();
-    // useParams récupère l'id de la leçon depuis l'URL
     const { id } = useParams();
 
-    // --- ÉTATS ---
-    // Stocke les données complètes de la leçon
     const [lecon, setLecon] = useState(null);
-    // Indique si la requête de chargement est en cours
     const [loading, setLoading] = useState(true);
-    // Indique si la requête de publication est en cours
     const [loadingStatut, setLoadingStatut] = useState(false);
-    // Stocke le message d'erreur
+    const [loadingDownload, setLoadingDownload] = useState(false);
     const [error, setError] = useState(null);
-    // Message de succès après publication/dépublication
     const [successMsg, setSuccessMsg] = useState(null);
+    const [showDownloadMenu, setShowDownloadMenu] = useState(false);
 
     // --- APPEL API ---
     // Récupère le détail d'une leçon par son id
@@ -40,22 +35,45 @@ const DetailLecon = () => {
         fetchLecon();
     }, [id]);
 
-    // --- ACTIONS ---
     // Change le statut (publié / brouillon)
     const handleToggleStatut = async () => {
         setLoadingStatut(true);
         try {
-            const nouveauStatut = lecon.statut === 'publie' ? 'brouillon' : 'publie';
-            const response = await api.patch(`/enseignant/lecons/${id}/`, {
-                statut: nouveauStatut
-            });
+            const nouveauStatut = lecon.statut === "publie" ? "brouillon" : "publie";
+            const response = await api.patch(`/enseignant/lecons/${id}/`, { statut: nouveauStatut });
             setLecon(response.data);
-            setSuccessMsg(nouveauStatut === 'publie' ? 'Leçon publiée aux élèves !' : 'Leçon remise en brouillon.');
+            setSuccessMsg(nouveauStatut === "publie" ? "✅ Leçon publiée aux élèves !" : "📝 Leçon remise en brouillon.");
             setTimeout(() => setSuccessMsg(null), 3000);
         } catch (err) {
             console.error(err);
         } finally {
             setLoadingStatut(false);
+        }
+    };
+
+    // Télécharger la leçon en PDF ou Word
+    const handleDownload = async (format) => {
+        setLoadingDownload(true);
+        setShowDownloadMenu(false);
+        try {
+            const response = await api.get(`/enseignant/lecons/${id}/telecharger/?format=${format}`, {
+                responseType: "blob"
+            });
+            const mimeType = format === "pdf" ? "application/pdf" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+            const url = window.URL.createObjectURL(new Blob([response.data], { type: mimeType }));
+            const link = document.createElement("a");
+            link.href = url;
+            link.setAttribute("download", `${lecon.titre.replace(/ /g, "_")}_${lecon.classe}.${format}`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+            setSuccessMsg(`📥 Téléchargement ${format.toUpperCase()} lancé !`);
+            setTimeout(() => setSuccessMsg(null), 3000);
+        } catch (err) {
+            console.error("Erreur téléchargement:", err);
+        } finally {
+            setLoadingDownload(false);
         }
     };
 
@@ -84,23 +102,41 @@ const DetailLecon = () => {
                     </div>
 
                     {!loading && lecon && (
-                        <button
-                            onClick={handleToggleStatut}
-                            disabled={loadingStatut}
-                            className={`btn rounded-2xl font-black gap-2 ${
-                                lecon.statut === 'publie' 
-                                ? 'btn-ghost text-warning border-warning/20' 
-                                : 'btn-primary shadow-lg shadow-primary/20'
-                            }`}
-                        >
-                            {loadingStatut ? (
-                                <Loader2 className="animate-spin" size={18} />
-                            ) : lecon.statut === 'publie' ? (
-                                <><EyeOff size={18} /> Retirer de la classe</>
-                            ) : (
-                                <><Globe size={18} /> Publier la leçon</>
-                            )}
-                        </button>
+                        <div className="flex items-center gap-3">
+                            {/* Bouton de téléchargement */}
+                            <div className="relative">
+                                <button
+                                    onClick={() => setShowDownloadMenu(prev => !prev)}
+                                    disabled={loadingDownload}
+                                    className="btn btn-ghost rounded-2xl font-black gap-2 border-2 border-base-200 hover:border-primary/30"
+                                >
+                                    {loadingDownload ? <Loader2 className="animate-spin" size={18} /> : <Download size={18} />}
+                                    Télécharger
+                                    <ChevronDown size={14} />
+                                </button>
+                                {showDownloadMenu && (
+                                    <div className="absolute right-0 top-full mt-2 bg-base-100 border-2 border-base-200 rounded-2xl shadow-2xl shadow-base-300/30 z-50 overflow-hidden min-w-[170px]">
+                                        <button onClick={() => handleDownload("pdf")}
+                                            className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-base-200/60 font-bold text-sm transition-colors">
+                                            <FileText size={16} className="text-error" /> Exporter en PDF
+                                        </button>
+                                        <button onClick={() => handleDownload("docx")}
+                                            className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-base-200/60 font-bold text-sm transition-colors border-t border-base-200">
+                                            <FileText size={16} className="text-blue-500" /> Exporter en Word
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Bouton publication */}
+                            <button
+                                onClick={handleToggleStatut}
+                                disabled={loadingStatut}
+                                className={"btn rounded-2xl font-black gap-2 " + (lecon.statut === "publie" ? "btn-ghost text-warning border-warning/20" : "btn-primary shadow-lg shadow-primary/20")}
+                            >
+                                {loadingStatut ? (<Loader2 className="animate-spin" size={18} />) : lecon.statut === "publie" ? (<><EyeOff size={18} /> Retirer de la classe</>) : (<><Globe size={18} /> Publier la leçon</>)}
+                            </button>
+                        </div>
                     )}
                 </div>
 

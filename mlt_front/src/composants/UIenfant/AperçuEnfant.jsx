@@ -1,6 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Flame, Star, Target, BarChart3, Loader2, Sparkles, BookOpen } from 'lucide-react';
+import { Trophy, Flame, Star, Target, BarChart3, Sparkles, BookOpen } from 'lucide-react';
 import api from '../../apiDjango/api.jsx';
+
+// 🦴 SKELETON LOADERS
+const HeaderSkeleton = () => (
+    <div className="p-10 md:p-14 border-b border-base-300 bg-base-200/30 animate-pulse">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
+            <div className="space-y-4 max-w-2xl w-full">
+                <div className="w-48 h-5 bg-base-300 rounded-full"></div>
+                <div className="w-64 h-12 bg-base-300 rounded-2xl"></div>
+                <div className="space-y-2 w-full">
+                    <div className="w-full h-6 bg-base-300 rounded-lg"></div>
+                    <div className="w-3/4 h-5 bg-base-300 rounded-lg"></div>
+                </div>
+            </div>
+            <div className="w-44 h-24 bg-base-300 rounded-[2.2rem]"></div>
+        </div>
+    </div>
+);
+
+const StatItemSkeleton = () => (
+    <div className="bg-base-300/20 border border-base-300/30 p-6 rounded-[2.5rem] flex flex-col items-center justify-center text-center animate-pulse h-32">
+        <div className="w-8 h-8 bg-base-300 rounded-full mb-3"></div>
+        <div className="w-16 h-8 bg-base-300 rounded-xl"></div>
+        <div className="w-20 h-3 bg-base-300 rounded-lg mt-2"></div>
+    </div>
+);
 
 const ApercuEnfant = () => {
     const [stats, setStats] = useState(null);
@@ -9,18 +34,44 @@ const ApercuEnfant = () => {
     useEffect(() => {
         const fetchDashboardData = async () => {
             try {
-                const response = await api.get('/quiz/enfant-dashboard/');
+                setLoading(true);
+                const minDelay = new Promise(resolve => setTimeout(resolve, 1200));
+                const [response] = await Promise.all([
+                    api.get('/quiz/enfant-dashboard/'),
+                    minDelay
+                ]);
                 setStats(response.data);
             } catch (err) {
                 setStats({ prenom: "Aventurier", niveau: 1, xp: 45, streak: 3, totalEtoiles: 120, dernierScore: 18 });
-            } finally { setLoading(false); }
+            } finally { 
+                setLoading(false); 
+            }
         };
         fetchDashboardData();
     }, []);
 
     if (loading) return (
-        <div className="flex h-96 items-center justify-center">
-            <Loader2 className="w-8 h-8 animate-spin text-primary/20" />
+        <div className="w-full max-w-5xl mx-auto py-8 px-4">
+            <div className="bg-base-100 border border-base-300 rounded-[3rem] shadow-xl overflow-hidden">
+                <HeaderSkeleton />
+                <div className="p-10 md:p-14 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                    <div className="space-y-8 w-full">
+                        <div className="space-y-4">
+                            <div className="flex justify-between items-end">
+                                <div className="w-40 h-4 bg-base-300 rounded-lg"></div>
+                                <div className="w-12 h-6 bg-base-300 rounded-lg"></div>
+                            </div>
+                            <div className="h-5 w-full bg-base-300 rounded-full p-1"></div>
+                        </div>
+                        <div className="h-20 w-full bg-base-300 rounded-3xl"></div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4 md:gap-6">
+                        <StatItemSkeleton />
+                        <StatItemSkeleton />
+                        <StatItemSkeleton />
+                    </div>
+                </div>
+            </div>
         </div>
     );
 

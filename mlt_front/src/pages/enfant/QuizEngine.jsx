@@ -3,6 +3,70 @@ import { Loader2, BrainCircuit, Trophy, ArrowRight, Timer, Lightbulb, Star, Chev
 import confetti from 'canvas-confetti';
 import api from '../../apiDjango/api.jsx';
 import { getMathyFeedback } from '../../apiDjango/aiService';
+import { speakText, speakTextSafe, stopAllAudio } from '../../apiDjango/ttsService';
+
+const CORRECT_PHRASES = [
+    "Super ! C'est ça.",
+    "Génial ! Tu as trouvé.",
+    "Excellent !",
+    "Bravo ! Tu es trop fort.",
+    "Magnifique !",
+    "Oui, c'est exact !"
+];
+
+const INCORRECT_PHRASES = [
+    "Tu y es presque, essaie encore !",
+    "Ce n'est pas grave, continue !",
+    "Ne baisse pas les bras !",
+    "Presque ! Tu vas y arriver.",
+    "Oups ! Mais tu apprends, c'est super.",
+    "Courage, réessaie !"
+];
+
+// 🦴 SKELETON LOADERS
+const ExerciseHeaderSkeleton = () => (
+    <div className="px-6 py-4 flex justify-between items-center border-b border-base-200 bg-gradient-to-r from-base-100 to-base-200/20 animate-pulse">
+        <div className="w-16 h-5 bg-base-300 rounded-lg"></div>
+        <div className="flex gap-1">
+            <div className="w-5 h-5 bg-base-300 rounded-full"></div>
+            <div className="w-5 h-5 bg-base-300 rounded-full"></div>
+            <div className="w-5 h-5 bg-base-300 rounded-full"></div>
+        </div>
+    </div>
+);
+
+const ExerciseContentSkeleton = () => (
+    <div className="flex-1 p-6 md:p-8 flex flex-col items-center space-y-8 animate-pulse w-full">
+        {/* Progression Skeleton */}
+        <div className="w-full max-w-2xl space-y-2">
+            <div className="flex justify-between">
+                <div className="w-28 h-4 bg-base-300 rounded-lg"></div>
+                <div className="w-12 h-4 bg-base-300 rounded-lg"></div>
+            </div>
+            <div className="w-full h-3 bg-base-300 rounded-full"></div>
+        </div>
+
+        {/* Question Title Skeleton */}
+        <div className="w-full max-w-2xl text-center py-6 space-y-2">
+            <div className="w-3/4 h-8 bg-base-300 rounded-xl mx-auto"></div>
+            <div className="w-1/2 h-6 bg-base-300 rounded-xl mx-auto"></div>
+        </div>
+
+        {/* Grid Options Skeleton */}
+        <div className="w-full max-w-2xl flex flex-col md:flex-row items-center gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 w-full">
+                <div className="h-16 bg-base-300 rounded-2xl w-full"></div>
+                <div className="h-16 bg-base-300 rounded-2xl w-full"></div>
+                <div className="h-16 bg-base-300 rounded-2xl w-full"></div>
+                <div className="h-16 bg-base-300 rounded-2xl w-full"></div>
+            </div>
+            <div className="w-20 h-20 bg-base-300 rounded-3xl shrink-0"></div>
+        </div>
+
+        {/* Bulb Icon Skeleton */}
+        <div className="w-16 h-16 bg-base-300 rounded-full mx-auto"></div>
+    </div>
+);
 
 const QuizEngine = ({ theme, onBack }) => {
     const [questions, setQuestions] = useState([]);
@@ -23,6 +87,7 @@ const QuizEngine = ({ theme, onBack }) => {
     const [timeLeft, setTimeLeft] = useState(60);
     const [quizFinished, setQuizFinished] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [isReading, setIsReading] = useState(false);
 
     const timerRef = useRef(null);
 
@@ -31,7 +96,24 @@ const QuizEngine = ({ theme, onBack }) => {
         const fetchQuestions = async () => {
             try {
                 setLoading(true);
-                const response = await api.get(`/quiz/${theme.toUpperCase()}/`);
+                // Réinitialiser les états du quiz pour le nouveau thème
+                setQuestions([]);
+                setCurrentIndex(0);
+                setScore(0);
+                setShowFeedback(false);
+                setSelectedAnswer(null);
+                setAiFeedback('');
+                setHint('');
+                setHintsLeft(3);
+                setShowHintBox(false);
+                setQuizFinished(false);
+                stopAllAudio(); // Arrêter toute lecture en cours
+
+                const minDelay = new Promise(resolve => setTimeout(resolve, 1200));
+                const [response] = await Promise.all([
+                    api.get(`/quiz/${theme.toUpperCase()}/`),
+                    minDelay
+                ]);
                 const data = response.data.question;
                 if (Array.isArray(data)) {
                     setQuestions(data);
@@ -45,9 +127,34 @@ const QuizEngine = ({ theme, onBack }) => {
         fetchQuestions();
     }, [theme]);
 
+    // Arrêter la lecture quand l'enfant quitte le quiz (unmount)
+    useEffect(() => {
+        return () => {
+            stopAllAudio();
+        };
+    }, []);
+
+    // --- LECTURE VOCALE DE LA QUESTION ---
+    useEffect(() => {
+        if (loading || quizFinished || !questions || questions.length === 0 || !questions[currentIndex]) return;
+
+        const readQuestion = async () => {
+            setIsReading(true);
+            try {
+                await speakText(questions[currentIndex].texte);
+            } catch (err) {
+                console.error('TTS error:', err);
+            } finally {
+                setIsReading(false);
+            }
+        };
+
+        readQuestion();
+    }, [currentIndex, loading, quizFinished, questions]);
+
     // --- 2. LOGIQUE DU TIMER ---
     useEffect(() => {
-        if (loading || quizFinished || showFeedback) {
+        if (loading || quizFinished || showFeedback || isReading) {
             if (timerRef.current) clearInterval(timerRef.current);
             return;
         }
@@ -66,11 +173,14 @@ const QuizEngine = ({ theme, onBack }) => {
         return () => {
             if (timerRef.current) clearInterval(timerRef.current);
         };
-    }, [currentIndex, loading, quizFinished, showFeedback]);
+    }, [currentIndex, loading, quizFinished, showFeedback, isReading]);
 
     // --- 3. ACTIONS ---
     const handleOptionClick = async (option) => {
         if (showFeedback || isAiLoading) return;
+
+        // Arrêter immédiatement toute lecture audio en cours
+        stopAllAudio();
 
         if (timerRef.current) clearInterval(timerRef.current);
         setShowHintBox(false);
@@ -89,14 +199,22 @@ const QuizEngine = ({ theme, onBack }) => {
         try {
             const feedback = await getMathyFeedback(currentQ.texte, option, check, currentQ.explication);
             setAiFeedback(feedback);
+            
+            // Sélectionner et lire une phrase d'encouragement au lieu de l'explication écrite
+            const phrases = check ? CORRECT_PHRASES : INCORRECT_PHRASES;
+            const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
+            speakTextSafe(randomPhrase);
         } catch (err) {
-            setAiFeedback(check ? "Bravo ! C'est la bonne réponse." : "Dommage, regarde l'explication !");
+            const defaultFeedback = check ? "Bravo ! C'est la bonne réponse." : "Dommage, regarde l'explication !";
+            setAiFeedback(defaultFeedback);
+            speakTextSafe(defaultFeedback);
         } finally {
             setIsAiLoading(false);
         }
     };
 
     const handleNext = () => {
+        stopAllAudio(); // Arrête la lecture audio en cours
         if (currentIndex < questions.length - 1) {
             setCurrentIndex(prev => prev + 1);
             setShowFeedback(false);
@@ -130,6 +248,7 @@ const QuizEngine = ({ theme, onBack }) => {
     const handleUseHint = async () => {
         if (hintsLeft <= 0 || showHintBox || showFeedback || isAiLoading) return;
 
+        stopAllAudio(); // Arrête toute lecture vocale en cours avant d'annoncer l'aide
         setIsAiLoading(true);
         setShowHintBox(true);
         setHintsLeft(prev => prev - 1);
@@ -138,26 +257,37 @@ const QuizEngine = ({ theme, onBack }) => {
         try {
             const hintMsg = await getMathyFeedback(currentQ.texte, "DEMANDE_INDICE", false, currentQ.explication);
             setHint(hintMsg);
+            speakTextSafe(hintMsg); // Lecture directe de l'aide pour l'enfant
         } catch (err) {
-            setHint("Réfléchis bien au lien entre les nombres ! ✨");
+            const fallbackHint = "Réfléchis bien au lien entre les nombres ! ✨";
+            setHint(fallbackHint);
+            speakTextSafe("Réfléchis bien au lien entre les nombres !");
         } finally {
             setIsAiLoading(false);
         }
     };
 
     if (loading) return (
-        <div className="min-h-screen bg-base-200 flex items-center justify-center">
-            <Loader2 className="animate-spin text-primary" size={40} />
+        <div className="min-h-screen bg-base-200/30 p-4 font-sans flex items-center justify-center">
+            <div className="w-full max-w-4xl bg-base-100 rounded-[2.5rem] shadow-2xl border border-base-200 overflow-hidden min-h-[85vh] flex flex-col justify-between">
+                <div>
+                    <ExerciseHeaderSkeleton />
+                    <ExerciseContentSkeleton />
+                </div>
+                <div className="p-6 bg-base-200/30 border-t border-base-200 text-center animate-pulse">
+                    <div className="w-32 h-3 bg-base-300 rounded-full mx-auto"></div>
+                </div>
+            </div>
         </div>
     );
 
     return (
-        <div className="min-h-screen bg-base-200 p-4 font-sans">
-            <div className="max-w-4xl mx-auto bg-base-100 rounded-[2.5rem] shadow-xl overflow-hidden flex flex-col min-h-[85vh] border border-base-300 relative">
+        <div className="min-h-screen bg-base-200/30 p-4 font-sans">
+            <div className="max-w-4xl mx-auto bg-base-100 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col min-h-[85vh] border border-base-200 relative animate-in fade-in duration-500">
 
                 {/* HEADER */}
-                <div className="px-6 py-4 flex justify-between items-center border-b border-base-200">
-                    <button onClick={onBack} className="text-base-content/40 hover:text-error font-black text-xs flex items-center gap-1 transition-colors">
+                <div className="px-6 py-4 flex justify-between items-center border-b border-base-200 bg-gradient-to-r from-base-100 to-base-200/20">
+                    <button onClick={() => { stopAllAudio(); onBack(); }} className="text-base-content/40 hover:text-error font-black text-xs flex items-center gap-1 transition-colors">
                         <ChevronLeft size={16} /> QUITTER
                     </button>
                     <div className="flex gap-1">
@@ -184,6 +314,16 @@ const QuizEngine = ({ theme, onBack }) => {
                 <div className="flex-1 p-6 flex flex-col items-center">
                     {!quizFinished ? (
                         <div className="w-full max-w-2xl flex-1 flex flex-col">
+                            {/* INDICATEUR DE LECTURE VOCALE */}
+                            {isReading && (
+                                <div className="flex items-center justify-center gap-2 text-primary animate-pulse py-3">
+                                    <span className="text-2xl">🔊</span>
+                                    <span className="text-xs font-black uppercase tracking-widest">
+                                        Mathy lit la question...
+                                    </span>
+                                </div>
+                            )}
+
                             {/* QUESTION */}
                             <div className="text-center py-6">
                                 <h1 className="text-2xl md:text-3xl font-bold text-base-content leading-tight">
