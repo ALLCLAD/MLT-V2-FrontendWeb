@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Bell, Moon, Sun } from 'lucide-react'; //  ajout Moon et Sun
+import Logo from '../../assets/logo.jpeg';
 
 const NavbarAuth = () => {
 
@@ -23,9 +24,12 @@ const NavbarAuth = () => {
                 {/* LOGO - Retour à l'accueil */}
                 <div className="flex-1">
                     <Link to="/" className="flex items-center gap-2 group">
-                        <div className="bg-primary rounded-full flex items-center justify-center shadow-md transition-transform group-hover:scale-110" style={{ width: '40px', height: '40px' }}>
-                            <span className="text-primary-content text-xl font-bold italic">M</span>
-                        </div>
+                        <img 
+                            src={Logo} 
+                            alt="MLT Logo" 
+                            className="rounded-full shadow-md transition-transform group-hover:scale-110 object-cover" 
+                            style={{ width: '40px', height: '40px' }} 
+                        />
                         <span className="text-2xl font-black text-primary tracking-tighter">MLT</span>
                     </Link>
                 </div>

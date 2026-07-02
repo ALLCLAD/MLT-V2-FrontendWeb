@@ -15,6 +15,7 @@ const LecteurVocal = ({ texte }) => {
     const phrasesRef = useRef([]);
     const abortControllerRef = useRef(null);
     const userPausedRef = useRef(false);
+    const cacheRef = useRef({}); // Cache pour stocker les segments pré-chargés
     
     // Identifiant de session de lecture pour éviter les chevauchements asynchrones
     const lectureSessionIdRef = useRef(0);
@@ -108,9 +109,24 @@ const LecteurVocal = ({ texte }) => {
         };
     }, [texte]);
 
+    const nettoyerCache = () => {
+        Object.keys(cacheRef.current).forEach(key => {
+            const item = cacheRef.current[key];
+            if (item.controller) {
+                try { item.controller.abort(); } catch (e) {}
+            }
+            if (item.url) {
+                try { URL.revokeObjectURL(item.url); } catch (e) {}
+            }
+        });
+        cacheRef.current = {};
+    };
+
     const stopSilencieusement = () => {
         // Incrémenter la session de lecture annule immédiatement toute boucle ou promesse en cours
         lectureSessionIdRef.current += 1;
+
+        nettoyerCache();
 
         if (abortControllerRef.current) {
             abortControllerRef.current.abort();
@@ -150,15 +166,65 @@ const LecteurVocal = ({ texte }) => {
 
         if (audioRef.current) {
             audioRef.current.pause();
-        } else if (abortControllerRef.current) {
-            abortControllerRef.current.abort();
-            abortControllerRef.current = null;
-            setCurrentAbortController(null);
+        }
+
+        // Annuler la requête du segment en cours si elle est toujours active
+        const cachedItem = cacheRef.current[indexRef.current];
+        if (cachedItem && cachedItem.controller) {
+            try {
+                cachedItem.controller.abort();
+            } catch (e) {}
         }
     };
 
+    const prefetchSegment = async (index, sessionId) => {
+        if (index >= phrasesRef.current.length) return;
+        if (cacheRef.current[index]) return; // Déjà en cours ou chargé
+
+        const phrase = phrasesRef.current[index];
+        const controller = new AbortController();
+        
+        cacheRef.current[index] = {
+            state: 'loading',
+            controller: controller,
+            promise: null,
+            url: null
+        };
+
+        const promise = (async () => {
+            try {
+                const response = await api.post(
+                    '/tts/synthesize/',
+                    { text: phrase },
+                    { 
+                        responseType: 'blob',
+                        signal: controller.signal
+                    }
+                );
+                
+                if (lectureSessionIdRef.current !== sessionId) return;
+
+                const audioBlob = new Blob([response.data], { type: 'audio/wav' });
+                const audioUrl = URL.createObjectURL(audioBlob);
+                
+                if (cacheRef.current[index]) {
+                    cacheRef.current[index].state = 'loaded';
+                    cacheRef.current[index].url = audioUrl;
+                }
+            } catch (err) {
+                if (err.name !== 'AbortError' && err.message !== 'canceled') {
+                    console.error(`Erreur prefetch segment ${index}:`, err);
+                    if (cacheRef.current[index]) {
+                        cacheRef.current[index].state = 'error';
+                    }
+                }
+            }
+        })();
+
+        cacheRef.current[index].promise = promise;
+    };
+
     const jouerSegment = async (index) => {
-        // Enregistrer l'ID de session actuel pour ce segment
         const sessionId = lectureSessionIdRef.current;
 
         if (index >= phrasesRef.current.length) {
@@ -168,42 +234,45 @@ const LecteurVocal = ({ texte }) => {
 
         indexRef.current = index;
         setIndexPhrase(index);
-        const phrase = phrasesRef.current[index];
 
-        // Préparer le controller pour l'annulation
-        const controller = new AbortController();
-        abortControllerRef.current = controller;
-        setCurrentAbortController(controller);
-        setIsLoading(true);
+        // Lancer le pré-chargement des segments suivants (index + 1 et index + 2)
+        prefetchSegment(index + 1, sessionId);
+        prefetchSegment(index + 2, sessionId);
 
-        try {
-            const response = await api.post(
-                '/tts/synthesize/',
-                { text: phrase },
-                { 
-                    responseType: 'blob',
-                    signal: controller.signal
-                }
-            );
+        let cachedItem = cacheRef.current[index];
 
-            // Validation de session : si la session a changé pendant le téléchargement, on abandonne !
-            if (lectureSessionIdRef.current !== sessionId) return;
+        if (!cachedItem) {
+            prefetchSegment(index, sessionId);
+            cachedItem = cacheRef.current[index];
+        }
 
+        // Si le segment est en cours de téléchargement, on attend la fin du chargement
+        if (cachedItem && cachedItem.state === 'loading') {
+            setIsLoading(true);
+            await cachedItem.promise;
             setIsLoading(false);
-            const audioBlob = new Blob([response.data], { type: 'audio/wav' });
-            const audioUrl = URL.createObjectURL(audioBlob);
-            const audio = new Audio(audioUrl);
+        }
+
+        if (lectureSessionIdRef.current !== sessionId) return;
+
+        if (cachedItem && cachedItem.state === 'loaded' && cachedItem.url) {
+            const audio = new Audio(cachedItem.url);
             audioRef.current = audio;
             setCurrentAudio(audio);
 
             audio.onended = () => {
-                // Validation de session
                 if (lectureSessionIdRef.current !== sessionId) return;
                 
-                URL.revokeObjectURL(audioUrl);
+                // Nettoyer l'URL du segment joué pour libérer la mémoire
+                try {
+                    URL.revokeObjectURL(cachedItem.url);
+                    delete cacheRef.current[index];
+                } catch (e) {}
+
                 audioRef.current = null;
                 setCurrentAudio(null);
-                // Passer au segment suivant
+                
+                // Jouer immédiatement le segment suivant
                 jouerSegment(indexRef.current + 1);
             };
 
@@ -211,44 +280,29 @@ const LecteurVocal = ({ texte }) => {
                 console.error("Erreur lecture audio segment:", err);
                 if (lectureSessionIdRef.current !== sessionId) return;
 
-                URL.revokeObjectURL(audioUrl);
                 audioRef.current = null;
                 setCurrentAudio(null);
-                // Passer au suivant après 1s
+                
+                // Passer au suivant après un court instant
                 setTimeout(() => {
                     if (lectureSessionIdRef.current === sessionId && isSpeakingRef.current && !userPausedRef.current) {
                         jouerSegment(indexRef.current + 1);
                     }
-                }, 1000);
+                }, 400);
             };
 
-            await audio.play();
-            
-            // Re-vérifier au cas où un changement de session synchrone aurait eu lieu pendant play()
-            if (lectureSessionIdRef.current !== sessionId) {
-                audio.pause();
-                return;
-            }
-        } catch (err) {
-            if (err.name === 'AbortError' || err.message === 'canceled') {
-                return; // Annulation silencieuse
-            }
-            console.error("Erreur synthèse segment :", err);
-            
-            if (lectureSessionIdRef.current !== sessionId) return;
-
-            setIsLoading(false);
-            // Passer au suivant après 1s
-            setTimeout(() => {
-                if (lectureSessionIdRef.current === sessionId && isSpeakingRef.current && !userPausedRef.current) {
-                    jouerSegment(indexRef.current + 1);
+            try {
+                await audio.play();
+                if (lectureSessionIdRef.current !== sessionId) {
+                    audio.pause();
+                    return;
                 }
-            }, 1000);
-        } finally {
-            if (abortControllerRef.current === controller) {
-                abortControllerRef.current = null;
-                setCurrentAbortController(null);
+            } catch (err) {
+                console.error("Erreur de lecture audio :", err);
             }
+        } else {
+            console.warn(`Segment ${index} indisponible. Passage au suivant.`);
+            jouerSegment(indexRef.current + 1);
         }
     };
 

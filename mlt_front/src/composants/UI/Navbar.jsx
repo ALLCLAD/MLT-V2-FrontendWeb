@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Palette, Sun, Moon, Bell } from 'lucide-react';
+import Logo from '../../assets/logo.jpeg';
 
 const Navbar = () => {
 
@@ -20,9 +21,12 @@ const Navbar = () => {
                 {/* LOGO */}
                 <div className="flex-1">
                     <Link to="/" className="flex items-center gap-2 group">
-                        <div className="bg-primary rounded-full flex items-center justify-center shadow-md transition-transform group-hover:scale-110" style={{ width: '40px', height: '40px' }}>
-                            <span className="text-primary-content text-xl font-bold italic">M</span>
-                        </div>
+                        <img 
+                            src={Logo} 
+                            alt="MLT Logo" 
+                            className="rounded-full shadow-md transition-transform group-hover:scale-110 object-cover" 
+                            style={{ width: '40px', height: '40px' }} 
+                        />
                         <span className="text-2xl font-black text-primary tracking-tighter">M L T</span>
                     </Link>
                 </div>
