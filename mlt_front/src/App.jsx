@@ -19,7 +19,6 @@ import EnfantStatsDetail from './pages/parent/EnfantStatsDetail';
 // Pages pour l'enfant
 import LayoutEnfant from "./composants/Layout/LayoutEnfant";
 import ExercicesEnf from "./pages/enfant/ExercicesEnf";
-import JeuxEnf from "./pages/enfant/JeuxEnf";
 import ProfileEnfant from "./pages/enfant/ProfileEnfant.jsx";
 import DashEnf from './pages/enfant/DashEnf';
 import LeconsEnfant from './pages/enfant/LeconsEnfant';
@@ -148,7 +147,6 @@ function App() {
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<DashEnf />} />
             <Route path="exercices" element={<ExercicesEnf />} />
-            <Route path="jeux" element={<JeuxEnf />} />
             <Route path="profil" element={<ProfileEnfant />} />
             <Route path="lecons" element={<LeconsEnfant />} />
             <Route path="lecons/:id" element={<DetailLeconEnfant />} />

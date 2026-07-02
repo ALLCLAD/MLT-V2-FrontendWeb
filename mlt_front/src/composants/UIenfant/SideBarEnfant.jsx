@@ -16,7 +16,6 @@ const SidebarEnfant = () => {
     const menuItems = [
     { name: 'Mon Tableau', icon: <LayoutDashboard size={24} />, path: '/enfant/dashboard' },
     { name: "S'exercer",   icon: <BrainCircuit size={24} />,    path: '/enfant/exercices' },
-    { name: 'Jeux Math',   icon: <Gamepad2 size={24} />,        path: '/enfant/jeux' },
     { name: 'Mes Leçons',  icon: <BookOpen size={24} />,        path: '/enfant/lecons' },
     { name: 'Messagerie',  icon: <MessageSquare size={24} />,   path: '/enfant/messagerie' },
     { name: 'Mon Profil',  icon: <UserCircle size={24} />,      path: '/enfant/profil' },

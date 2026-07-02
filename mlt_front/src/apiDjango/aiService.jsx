@@ -20,7 +20,7 @@ const getNombreExercicesParClasse = (classe) => {
 // --- FONCTIONS EXPORTÉES ---
 
 /**
- * FONCTION 1 : Feedback ludique (Mathy)
+ * FONCTION 1 : Feedback ludique et aide (Mathy)
  */
 export const getMathyFeedback = async (question, reponseUtilisateur, isCorrect, explicationBack) => {
     const isHintMode = reponseUtilisateur === "DEMANDE_INDICE";
@@ -31,11 +31,13 @@ export const getMathyFeedback = async (question, reponseUtilisateur, isCorrect, 
                 {
                     role: "system",
                     content: `Tu es Mathy, un tuteur IA chaleureux pour un enfant du primaire au Togo.
-                    Ton ton : Très joyeux, motivant. Tu t'adresses directement à l'enfant par "tu".
-                    REGLES :
-                    1. MODE INDICE : Donne une piste imagée (bonbons, jouets) sans donner la réponse (1 phrase maximum).
-                    2. MODE FEEDBACK : Style Duolingo (très court et direct, max 10 mots). Si correct, félicite chaleureusement. Si incorrect, encourage positivement et donne un tout petit conseil simple (pas de longue explication).
-                    3. Format : 1 seule phrase très courte + emojis.`
+                    Ton ton : Très joyeux, motivant et bienveillant. Tu t'adresses directement à l'enfant par "tu".
+                    
+                    REGLES STRICTES :
+                    1. ZERO EMOJI : Ne mets JAMAIS d'émojis dans ta réponse. Aucun émoji n'est autorisé.
+                    2. MODE INDICE : Donne une piste très concrète et imagée (en lien avec des situations réelles comme des partages d'objets concrets ou de la monnaie) sans donner la réponse (1 phrase maximum).
+                    3. MODE FEEDBACK : Style Duolingo (très court, direct, max 10 mots). Si correct, félicite directement et sobrement. Si incorrect, encourage positivement et donne un conseil mathématique très concret et simple (pas de longue explication).
+                    4. Format : 1 seule phrase très courte, claire, sans aucun émoji.`
                 },
                 {
                     role: "user",
@@ -52,7 +54,7 @@ export const getMathyFeedback = async (question, reponseUtilisateur, isCorrect, 
         return completion.choices[0]?.message?.content;
     } catch (error) {
         console.error("Erreur Groq feedback:", error);
-        return "Continue comme ça, tu deviens de plus en plus fort ! 💪";
+        return "Continue comme ça, tu deviens de plus en plus fort !";
     }
 };
 
@@ -67,29 +69,32 @@ export const genererContenuLecon = async (titre, description, classe) => {
                     role: "system",
                     content: `Tu es Mathy, un tuteur expert pour un enfant (niveau ${classe}) au Togo.
                     
-                    OBJECTIF : Générer une leçon courte (150 à 200 mots maximum).
+                    OBJECTIF : Générer une leçon courte (150 à 200 mots maximum), très concrète et structurée.
                     
                     STYLE DE RÉDACTION :
                     - Parle directement à l'enfant ("Tu").
                     - Pas de phrases trop longues (facile à lire et à écouter).
-                    - Utilise des exemples togolais (marché, francs CFA, prénoms locaux).
+                    - Utilise des exemples togolais concrets et réels (marché, francs CFA, prénoms locaux).
+                    - Évite les phrases générales et le blabla inutile, va droit au concept mathématique concret.
+                    
+                    INTERDICTION STRICTE :
+                    - Ne mets AUCUN émoji dans ton texte. Les émojis sont strictement interdits.
 
                     STRUCTURE OBLIGATOIRE (Titres en chiffres romains) :
                     ## 1. Introduction
-                    (Une phrase d'accroche joyeuse)
+                    (Une phrase d'accroche directe et claire)
                     
                     ## 2. Le concept
-                    (Explication simplifiée du sujet en 2-3 phrases)
+                    (Explication simplifiée et concrète du sujet en 2-3 phrases)
                     
                     ## 3. Exemples pour comprendre
-                    (Maximum 2 exemples courts avec des listes à puces)
+                    (Maximum 2 exemples très concrets tirés du quotidien avec des listes à puces)
                     
                     ## 4. À retenir
-                    (Les 2 points les plus importants)
-
+                    (Les 2 points clés les plus importants pour appliquer la règle)
+                    
                     FORMATAGE :
                     - Utilise le Markdown (## pour les titres, ** pour les mots importants).
-                    - Évite les émojis complexes, garde uniquement les plus simples (🎉, 📝, 💡).
                     - Saute deux lignes entre les sections.`
                 },
                 {
@@ -99,7 +104,7 @@ export const genererContenuLecon = async (titre, description, classe) => {
             ],
             model: "llama-3.3-70b-versatile",
             temperature: 0.7,
-            max_tokens: 600, // Limite les tokens pour forcer la concision
+            max_tokens: 600,
         });
 
         return completion.choices[0]?.message?.content;
@@ -115,7 +120,6 @@ export const genererContenuLecon = async (titre, description, classe) => {
  */
 export const genererContenuLeconDepuisDocument = async (titre, classe, documentText, consignes = '') => {
     try {
-        // Limiter le texte extrait à 4000 caractères pour ne pas dépasser les tokens
         const texteLimité = documentText.substring(0, 4000);
 
         const completion = await groq.chat.completions.create({
@@ -126,27 +130,27 @@ export const genererContenuLeconDepuisDocument = async (titre, classe, documentT
                     
                     MISSION : Tu reçois un contenu brut extrait d'un document (PDF ou Word) fourni par un enseignant.
                     Tu dois :
-                    1. Extraire les informations essentielles de ce contenu.
-                    2. Améliorer le style : rendre le texte clair, engageant et adapté aux enfants.
-                    3. Ajouter des exemples togolais concrets si possible (marché, francs CFA, prénoms).
+                    1. Extraire les informations mathématiques essentielles de ce contenu.
+                    2. Rendre le texte clair, direct, extrêmement concret et adapté aux enfants.
+                    3. Utiliser des exemples concrets du quotidien togolais (marché, francs CFA, prénoms locaux).
                     4. Structurer proprement en Markdown selon ce format :
 
                     ## 1. Introduction
-                    (Phrase d'accroche)
+                    (Phrase d'accroche directe)
 
                     ## 2. Le concept
-                    (Explication simplifiée, 2-4 phrases max)
+                    (Explication simplifiée et concrète, 2-4 phrases max)
 
                     ## 3. Exemples pour comprendre
-                    (1-2 exemples concrets avec listes à puces)
+                    (1-2 exemples très concrets avec listes à puces)
 
                     ## 4. À retenir
-                    (2-3 points clés)
+                    (2-3 points clés concrets)
 
                     CONTRAINTES :
                     - Maximum 300 mots.
                     - Parle directement à l'enfant avec "tu".
-                    - Garde uniquement les émojis simples (🎉, 💡, 📝).`
+                    - ZERO EMOJI : N'inclus aucun émoji dans tout ton texte. Les émojis sont strictement interdits.`
                 },
                 {
                     role: "user",
@@ -185,21 +189,26 @@ export const genererExercices = async (titre, classe, contenu) => {
                     role: "system",
                     content: `Tu es un expert en pédagogie primaire au Togo. 
                     Génère exactement ${nbExercices} exercices au format JSON.
+                    
+                    CONSIGNES POUR LES EXERCICES :
+                    - Propose des exercices très concrets et pratiques, basés sur des situations de la vie réelle.
+                    - Les questions doivent être claires et avoir un intérêt mathématique rigoureux.
+                    - ZERO EMOJI : Ne mets aucun émoji dans tes questions ou explications.
 
                     RÈGLES DE RÉDACTION POUR LA VOIX (CRITIQUE) :
-                    1. LONGUEUR : La question doit faire entre 50 et 100 caractères maximum.
-                    2. STRUCTURE : Fais des phrases courtes. Utilise des points (.) pour créer des pauses.
+                    1. LONGUEUR : La question doit faire entre 50 et 120 caractères maximum.
+                    2. STRUCTURE : Fais des phrases courtes et directes. Utilise des points (.) pour créer des pauses.
                     3. MATHÉMATIQUES : Écris les calculs simplement (ex: 12 + 5 ou 4 x 3). 
-                    4. STYLE : Utilise des prénoms (Koffi, Ablavi) et des contextes locaux (marché, francs CFA).
-                    5. EXPLICATION : Doit être très courte (max 80 caractères) et commencer par "C'est simple !".
+                    4. STYLE : Utilise des prénoms (Koffi, Ablavi) et des contextes locaux concrets (marché, francs CFA).
+                    5. EXPLICATION : Doit être très concrète, courte (max 80 caractères) et commencer par "C'est simple !". Explique la méthode mathématique directement, sans blabla ni émoji.
 
                     FORMAT JSON STRICT :
                     [
                         {
-                            "question": "Texte court. Ponctuation claire.",
+                            "question": "Texte court et concret. Ponctuation claire.",
                             "reponse_correcte": "La réponse",
                             "mauvaises_reponses": "r1, r2, r3",
-                            "explication": "C'est simple ! On ajoute les pommes.",
+                            "explication": "C'est simple ! On fait...",
                             "ordre": 1
                         }
                     ]`
@@ -238,8 +247,9 @@ export const genererReponseExercice = async (question, classe) => {
                 {
                     role: "system",
                     content: `Expert math primaire. 
-                    Génère une réponse, 3 erreurs possibles et une explication très courte.
-                    CONSIGNE VOCALE : L'explication ne doit pas dépasser 100 caractères.`
+                    Génère une réponse, 3 erreurs possibles et une explication très courte et concrète.
+                    ZERO EMOJI : N'utilise jamais d'émojis dans ta réponse.
+                    CONSIGNE VOCALE : L'explication ne doit pas dépasser 100 caractères, elle doit être directe et concrète.`
                 },
                 {
                     role: "user",

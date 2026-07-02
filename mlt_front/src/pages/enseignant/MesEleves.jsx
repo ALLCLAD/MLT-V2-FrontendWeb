@@ -1,7 +1,51 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Users, ArrowRight, Loader2, UserMinus, AlertCircle, LayoutGrid, List } from 'lucide-react';
+import { Plus, Users, ArrowRight, Loader2, UserMinus, AlertCircle, LayoutGrid, List, GraduationCap, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../apiDjango/api.jsx';
+
+// 🦴 SKELETON LOADER COMPONENT (Premium experience)
+const StudentCardSkeleton = ({ viewMode }) => {
+    if (viewMode === 'grid') {
+        return (
+            <div className="card rounded-[2.5rem] border border-base-300 p-8 shadow-md bg-base-100 animate-pulse">
+                <div className="flex flex-col items-center gap-5 w-full">
+                    {/* Avatar Skeleton */}
+                    <div className="w-16 h-16 bg-base-300 rounded-[1.5rem]"></div>
+                    {/* Name Skeleton */}
+                    <div className="w-3/4 h-6 bg-base-300 rounded-lg"></div>
+                    {/* Metadata Badges Skeleton */}
+                    <div className="flex gap-2 w-full justify-center">
+                        <div className="w-20 h-4 bg-base-300 rounded-lg"></div>
+                        <div className="w-16 h-4 bg-base-300 rounded-lg"></div>
+                    </div>
+                </div>
+                <div className="divider my-4 opacity-50"></div>
+                {/* Button Skeleton */}
+                <div className="w-full h-12 bg-base-300 rounded-2xl"></div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="flex flex-col sm:flex-row items-center justify-between p-6 rounded-[2rem] border border-base-300 shadow-md bg-base-100 animate-pulse gap-6 w-full">
+            <div className="flex items-center gap-5 w-full">
+                {/* Avatar Skeleton */}
+                <div className="w-12 h-12 bg-base-300 rounded-[1.5rem] shrink-0"></div>
+                <div className="flex-1 space-y-2">
+                    {/* Name Skeleton */}
+                    <div className="w-48 h-6 bg-base-300 rounded-lg"></div>
+                    {/* Metadata Skeleton */}
+                    <div className="flex gap-2">
+                        <div className="w-20 h-4 bg-base-300 rounded-lg"></div>
+                        <div className="w-16 h-4 bg-base-300 rounded-lg"></div>
+                    </div>
+                </div>
+            </div>
+            {/* Button Skeleton */}
+            <div className="w-full sm:w-36 h-10 bg-base-300 rounded-xl shrink-0"></div>
+        </div>
+    );
+};
 
 const MesEleves = () => {
     const navigate = useNavigate();
@@ -10,15 +54,25 @@ const MesEleves = () => {
     const [error, setError] = useState(null);
     const [modalSupprimer, setModalSupprimer] = useState(null);
     const [loadingSupprimer, setLoadingSupprimer] = useState(false);
-    const [viewMode, setViewMode] = useState('grid'); // AJOUT DE L'OPTION
+    const [viewMode, setViewMode] = useState('grid');
 
+    // PAGINATION STATES
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 6;
+
+    // 1. RÉCUPÉRATION DE LA LISTE (délai min. 1.2s pour afficher les skeletons)
     const fetchEleves = async () => {
         try {
             setLoading(true);
-            const response = await api.get('/enseignant/eleves/');
+            const minDelay = new Promise(resolve => setTimeout(resolve, 1200));
+            const [response] = await Promise.all([
+                api.get('/enseignant/eleves/'),
+                minDelay
+            ]);
             setEleves(response.data);
         } catch (err) {
-            setError("Impossible de charger vos élèves.");
+            console.error("Erreur chargement élèves:", err);
+            setError("Impossible de charger la liste de vos élèves.");
         } finally {
             setLoading(false);
         }
@@ -31,7 +85,8 @@ const MesEleves = () => {
             setEleves(prev => prev.filter(e => e.id !== eleveId));
             setModalSupprimer(null);
         } catch (err) {
-            alert("Erreur lors de la suppression.");
+            console.error("Erreur suppression:", err);
+            alert("Erreur lors du retrait de l'élève.");
         } finally {
             setLoadingSupprimer(false);
         }
@@ -39,104 +94,222 @@ const MesEleves = () => {
 
     useEffect(() => { fetchEleves(); }, []);
 
-    if (loading) return (
-        <div className="flex flex-col items-center justify-center py-20">
-            <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
-            <p className="font-bold text-base-content/60 italic">Appel en classe...</p>
-        </div>
-    );
+    // Réinitialiser la page si on change de mode d'affichage ou si la liste change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [viewMode, eleves.length]);
+
+    // LOGIQUE DE CALCUL DE LA PAGINATION
+    const totalPages = Math.ceil(eleves.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedEleves = eleves.slice(startIndex, startIndex + itemsPerPage);
 
     return (
-        <div className="bg-base-200/50 min-h-screen py-8 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-6xl mx-auto bg-base-100 rounded-[3rem] shadow-xl shadow-base-300/50 border border-base-content/5 min-h-[80vh] flex flex-col overflow-hidden">
+        <div className="bg-base-200/30 min-h-screen py-6 px-2 sm:px-6 lg:px-8 font-sans">
+            <div className="max-w-6xl mx-auto bg-base-100 rounded-[3rem] shadow-2xl border border-base-200 min-h-[80vh] flex flex-col overflow-hidden">
                 
-                <div className="p-8 md:p-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-base-200">
+                {/* HEADER */}
+                <div className="p-8 md:p-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-base-200 bg-gradient-to-r from-base-100 to-base-200/20">
                     <div>
-                        <h1 className="text-4xl font-black text-base-content tracking-tight mb-2">Mes Élèves</h1>
-                        <p className="text-base-content/50 font-medium italic">Suivez l'évolution de votre classe.</p>
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-black uppercase tracking-wider mb-3">
+                            <Users size={14} /> Espace Enseignant
+                        </div>
+                        <h1 className="text-3xl md:text-4xl font-black text-base-content tracking-tight leading-none animate-in slide-in-from-top duration-300">
+                            Gestion de mes Élèves
+                        </h1>
+                        <p className="text-base-content/50 font-semibold italic mt-2">
+                            Suivez l'évolution globale et les statistiques détaillées de vos élèves.
+                        </p>
                     </div>
 
-                    {/* AJOUT DU SÉLECTEUR DE VUE (L'OPTION SUR L'IMAGE) */}
-                    <div className="flex items-center gap-4">
-                        <div className="join bg-base-200 p-1 rounded-2xl hidden sm:flex">
-                            <button 
-                                onClick={() => setViewMode('grid')} 
-                                className={`btn btn-sm join-item border-none ${viewMode === 'grid' ? 'btn-primary shadow-lg' : 'btn-ghost opacity-50'}`}
-                            >
-                                <LayoutGrid size={16} />
-                            </button>
-                            <button 
-                                onClick={() => setViewMode('list')} 
-                                className={`btn btn-sm join-item border-none ${viewMode === 'list' ? 'btn-primary shadow-lg' : 'btn-ghost opacity-50'}`}
-                            >
-                                <List size={16} />
-                            </button>
-                        </div>
-
-                        <button onClick={() => navigate('/enseignant/ajouter-eleve')} className="btn btn-primary rounded-2xl px-8 font-black shadow-lg shadow-primary/20 normal-case">
+                    <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
+                        {eleves.length > 0 && (
+                            <div className="join bg-base-200 p-1 rounded-2xl flex border border-base-300">
+                                <button
+                                    onClick={() => setViewMode('grid')}
+                                    className={`btn btn-sm join-item border-none rounded-xl ${viewMode === 'grid' ? 'btn-primary shadow-sm' : 'btn-ghost opacity-60'}`}
+                                >
+                                    <LayoutGrid size={16} />
+                                </button>
+                                <button
+                                    onClick={() => setViewMode('list')}
+                                    className={`btn btn-sm join-item border-none rounded-xl ${viewMode === 'list' ? 'btn-primary shadow-sm' : 'btn-ghost opacity-60'}`}
+                                >
+                                    <List size={16} />
+                                </button>
+                            </div>
+                        )}
+                        <button
+                            onClick={() => navigate('/enseignant/ajouter-eleve')}
+                            className="btn btn-primary rounded-2xl px-6 font-black shadow-lg shadow-primary/20 normal-case hover:scale-105 transition-transform"
+                        >
                             <Plus size={20} className="mr-1" /> Ajouter un élève
                         </button>
                     </div>
                 </div>
 
+                {/* ZONE DE CONTENU */}
                 <div className="flex-grow p-8 md:p-12 bg-base-100">
-                    {eleves.length === 0 ? (
-                        <div className="h-full flex flex-col items-center justify-center py-20 text-center">
-                            <div className="bg-base-200 w-24 h-24 rounded-full flex items-center justify-center mb-6">
-                                <Users size={48} className="opacity-20 text-primary" />
-                            </div>
-                            <h3 className="text-2xl font-black mb-2">Classe vide</h3>
-                            <p className="opacity-50 max-w-sm mx-auto mb-8 font-medium">Inscrivez vos élèves pour leur assigner des leçons et des exercices.</p>
+                    {error && (
+                        <div className="alert alert-error rounded-2xl font-bold mb-8 shadow-md border-none">
+                            <AlertCircle size={20} />
+                            <span>{error}</span>
                         </div>
-                    ) : (
-                        /* ADAPTATION DE L'AFFICHAGE SELON VIEWMODE */
-                        <div className={viewMode === 'grid' ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" : "flex flex-col gap-4 max-w-4xl mx-auto"}>
-                            {eleves.map(eleve => (
-                                <div 
-                                    key={eleve.id} 
-                                    className={`bg-base-100 border border-base-200 shadow-sm hover:shadow-2xl hover:border-primary/20 transition-all duration-300 flex items-center ${
-                                        viewMode === 'grid' 
-                                        ? "card rounded-[2.5rem] p-8 flex-col text-center" 
-                                        : "rounded-2xl p-4 flex-row justify-between"
-                                    }`}
-                                >
-                                    <div className={`flex items-center gap-4 ${viewMode === 'grid' ? "flex-col" : "flex-row"}`}>
-                                        <div className={`${viewMode === 'grid' ? "w-20 h-20 text-3xl mb-6" : "w-12 h-12 text-xl"} bg-primary text-primary-content rounded-[1.5rem] flex items-center justify-center font-black shadow-inner`}>
-                                            {eleve.prenom ? eleve.prenom[0].toUpperCase() : '?'}
-                                        </div>
-                                        <div className={viewMode === 'grid' ? "" : "text-left"}>
-                                            <h3 className="text-xl font-black">{eleve.prenom} {eleve.nom}</h3>
-                                            <span className="text-xs font-black uppercase opacity-30 tracking-widest mt-1">@{eleve.username}</span>
-                                        </div>
-                                    </div>
-                                    
-                                    <div className={`badge bg-primary/10 border-none text-primary font-black px-4 py-4 rounded-xl ${viewMode === 'grid' ? "my-6" : ""}`}>
-                                        {eleve.classe}
-                                    </div>
+                    )}
 
-                                    <div className={`flex gap-2 ${viewMode === 'grid' ? "w-full mt-auto" : ""}`}>
-                                        <button onClick={() => navigate(`/enseignant/eleves/${eleve.id}/scores`)} className="btn btn-ghost flex-1 font-black normal-case">Scores</button>
-                                        <button onClick={() => setModalSupprimer(eleve)} className="btn btn-ghost text-error rounded-xl"><UserMinus size={18}/></button>
-                                    </div>
-                                </div>
+                    {loading ? (
+                        <div className={viewMode === 'grid'
+                            ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+                            : "space-y-4 max-w-4xl mx-auto"
+                        }>
+                            {[...Array(3)].map((_, i) => (
+                                <StudentCardSkeleton key={i} viewMode={viewMode} />
                             ))}
                         </div>
+                    ) : eleves.length === 0 ? (
+                        <div className="h-full flex flex-col items-center justify-center py-20 text-center animate-in fade-in duration-700">
+                            <div className="bg-gradient-to-tr from-primary/10 to-primary/5 w-28 h-28 rounded-full flex items-center justify-center mb-6 shadow-inner">
+                                <Users size={54} className="text-primary animate-pulse" />
+                            </div>
+                            <h3 className="text-2xl font-black text-base-content">Votre classe est vide</h3>
+                            <p className="text-base-content/60 max-w-sm mx-auto mb-8 font-semibold mt-2">
+                                Aucun élève n'est encore inscrit dans votre classe. Créez un profil élève pour commencer à assigner des leçons et des exercices.
+                            </p>
+                            <button
+                                onClick={() => navigate('/enseignant/ajouter-eleve')}
+                                className="btn btn-primary rounded-2xl px-8 font-black shadow-lg shadow-primary/25 normal-case"
+                            >
+                                <Plus size={20} className="mr-1" /> Inscrire mon premier élève
+                            </button>
+                        </div>
+                    ) : (
+                        <>
+                            <div className={viewMode === 'grid'
+                                ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-in fade-in duration-500"
+                                : "space-y-4 max-w-4xl mx-auto animate-in fade-in duration-500"
+                            }>
+                                {paginatedEleves.map((eleve) => (
+                                    <div
+                                        key={eleve.id}
+                                        className={`group relative bg-base-100 border border-base-200 transition-all duration-300 ${
+                                            viewMode === 'grid'
+                                                ? "card rounded-[2.5rem] hover:shadow-2xl hover:-translate-y-1 hover:border-primary/20 p-8 shadow-lg shadow-base-200/50 flex flex-col items-center text-center"
+                                                : "flex flex-col sm:flex-row items-center justify-between p-6 rounded-[2rem] hover:shadow-xl hover:border-primary/20 border shadow-md gap-6 w-full"
+                                        }`}
+                                    >
+                                        {/* BOUTON SUPPRIMER (Retirer de la classe) */}
+                                        <button
+                                            onClick={() => setModalSupprimer(eleve)}
+                                            className={`absolute top-4 right-4 p-2 rounded-xl text-error opacity-60 md:opacity-0 group-hover:opacity-100 hover:bg-error/10 hover:text-error transition-all`}
+                                            title="Retirer cet élève"
+                                        >
+                                            <UserMinus size={18} />
+                                        </button>
+
+                                        {/* CORPS PRINCIPAL */}
+                                        <div className={`flex items-center ${viewMode === 'grid' ? 'flex-col text-center' : 'flex-row text-left'} gap-5 w-full`}>
+                                            <div className="w-16 h-16 bg-gradient-to-tr from-primary/80 to-primary text-primary-content rounded-[1.5rem] flex items-center justify-center text-2xl font-black shadow-lg shadow-primary/20 shrink-0 transform group-hover:scale-105 transition-transform duration-300">
+                                                {eleve.prenom ? eleve.prenom[0].toUpperCase() : '?'}
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                                <h3 className="text-xl font-black text-base-content truncate group-hover:text-primary transition-colors">
+                                                    {eleve.prenom} {eleve.nom}
+                                                </h3>
+                                                <div className={`flex flex-wrap items-center gap-2 mt-2 ${viewMode === 'grid' ? 'justify-center' : ''}`}>
+                                                    <span className="text-[10px] font-black uppercase opacity-40 tracking-wider flex items-center gap-1">
+                                                        <User size={12} /> {eleve.username}
+                                                    </span>
+                                                    <div className="badge badge-sm bg-primary/10 border-none text-primary font-black px-2.5 py-2.5 rounded-lg flex items-center gap-1">
+                                                        <GraduationCap size={12} /> {eleve.classe}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {viewMode === 'grid' && <div className="divider my-4 opacity-50 w-full"></div>}
+
+                                        {/* BOUTON D'ACTION PRINCIPAL */}
+                                        <div className={viewMode === 'grid' ? "w-full" : "shrink-0 w-full sm:w-auto"}>
+                                            <button
+                                                onClick={() => navigate(`/enseignant/eleves/${eleve.id}/scores`)}
+                                                className={`btn ${viewMode === 'grid' ? 'btn-block btn-primary rounded-2xl shadow-md shadow-primary/15' : 'btn-primary px-6 rounded-xl'} font-black text-sm uppercase tracking-wide transition-all`}
+                                            >
+                                                {viewMode === 'grid' ? 'Voir les scores' : (
+                                                    <span className="flex items-center gap-1">
+                                                        Voir les scores <ArrowRight size={16} />
+                                                    </span>
+                                                )}
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* PAGINATION COMPONENT */}
+                            {totalPages > 1 && (
+                                <div className="flex justify-center items-center gap-2 mt-12 border-t border-base-200 pt-8 animate-in fade-in duration-500">
+                                    <button
+                                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                        disabled={currentPage === 1}
+                                        className="btn btn-ghost btn-sm rounded-xl font-black uppercase tracking-wider disabled:opacity-40"
+                                    >
+                                        Précédent
+                                    </button>
+                                    
+                                    {[...Array(totalPages)].map((_, index) => {
+                                        const pageNum = index + 1;
+                                        return (
+                                            <button
+                                                key={pageNum}
+                                                onClick={() => setCurrentPage(pageNum)}
+                                                className={`btn btn-sm rounded-xl w-10 h-10 p-0 font-black ${currentPage === pageNum ? 'btn-primary shadow-md' : 'btn-ghost'}`}
+                                            >
+                                                {pageNum}
+                                            </button>
+                                        );
+                                    })}
+
+                                    <button
+                                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                        disabled={currentPage === totalPages}
+                                        className="btn btn-ghost btn-sm rounded-xl font-black uppercase tracking-wider disabled:opacity-40"
+                                    >
+                                        Suivant
+                                    </button>
+                                </div>
+                            )}
+                        </>
                     )}
                 </div>
             </div>
 
-            {/* Modal Suppression */}
+            {/* Modal Confirmation Retrait Élève */}
             {modalSupprimer && (
-                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-base-100 rounded-[2.5rem] p-10 max-w-sm w-full shadow-2xl text-center">
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300">
+                    <div className="bg-base-100 rounded-[2.5rem] p-8 md:p-10 max-w-md w-full shadow-2xl text-center border border-base-200 animate-in zoom-in-95 duration-200">
                         <div className="w-16 h-16 bg-error/10 text-error rounded-2xl flex items-center justify-center mx-auto mb-6">
                             <UserMinus size={32} />
                         </div>
-                        <h3 className="text-2xl font-black mb-2">Retirer l'élève ?</h3>
-                        <p className="opacity-50 font-medium mb-8">Voulez-vous vraiment retirer <b>{modalSupprimer.prenom}</b> de votre liste ?</p>
+                        <h3 className="text-2xl font-black mb-2 text-base-content">Retirer l'élève de la classe ?</h3>
+                        <p className="opacity-60 font-semibold mb-8 text-sm">
+                            Voulez-vous vraiment retirer <b>{modalSupprimer.prenom} {modalSupprimer.nom}</b> ?<br/>
+                            L'élève ne fera plus partie de votre classe, mais ses données de compte seront préservées.
+                        </p>
                         <div className="flex gap-3">
-                            <button onClick={() => setModalSupprimer(null)} className="btn btn-ghost flex-1 rounded-2xl font-black">Annuler</button>
-                            <button onClick={() => handleSupprimerEleve(modalSupprimer.id)} className={`btn btn-error flex-1 rounded-2xl font-black ${loadingSupprimer ? 'loading' : ''}`}>Retirer</button>
+                            <button 
+                                onClick={() => setModalSupprimer(null)} 
+                                disabled={loadingSupprimer}
+                                className="btn btn-ghost flex-1 rounded-2xl font-black normal-case border border-base-300"
+                            >
+                                Annuler
+                            </button>
+                            <button 
+                                onClick={() => handleSupprimerEleve(modalSupprimer.id)} 
+                                disabled={loadingSupprimer}
+                                className="btn btn-error flex-1 rounded-2xl font-black normal-case text-white shadow-lg shadow-error/20"
+                            >
+                                {loadingSupprimer ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Retirer'}
+                            </button>
                         </div>
                     </div>
                 </div>

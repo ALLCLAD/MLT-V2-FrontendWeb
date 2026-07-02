@@ -16,6 +16,7 @@ const DashEns = () => {
     const [elevesNoms, setElevesNoms] = useState([]);
     const [recentScores, setRecentScores] = useState([]);
     const [loadingProgression, setLoadingProgression] = useState(true);
+    const [refreshKey, setRefreshKey] = useState(0);
 
     const colors = ["#6366f1", "#f59e0b", "#10b981", "#ef4444", "#ec4899"];
     const jours = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
@@ -61,6 +62,7 @@ const DashEns = () => {
     const handleRefresh = () => {
         fetchCalendrier();
         fetchProgression();
+        setRefreshKey(prev => prev + 1);
     };
 
     useEffect(() => {
@@ -111,7 +113,7 @@ const DashEns = () => {
                 <div className="p-8 md:p-12 space-y-10">
 
                     {/* STATISTIQUES GLOBALES */}
-                    <ApercuStatsEns />
+                    <ApercuStatsEns refreshKey={refreshKey} />
                     
 
                     {/* GRILLE : Progression + Calendrier */}

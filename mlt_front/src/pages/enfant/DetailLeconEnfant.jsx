@@ -1,10 +1,44 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, BookOpen, ClipboardList, Loader2, Clock, GraduationCap, PlayCircle } from 'lucide-react';
+import { ArrowLeft, BookOpen, ClipboardList, Loader2, Clock, GraduationCap, PlayCircle, AlertTriangle, CheckCircle } from 'lucide-react';
 import api from '../../apiDjango/api.jsx';
 import ReactMarkdown from 'react-markdown';
-// 1. Import du composant lecteur
 import LecteurVocal from '../../composants/LecteurVocal';
+
+// =========================================================
+// SKELETON LOADER FOR LESSON DETAIL
+// =========================================================
+const DetailSkeleton = () => (
+    <div className="animate-pulse space-y-8">
+        {/* Header Skeleton */}
+        <div className="space-y-4">
+            <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-base-300 rounded-full" />
+                <div className="space-y-2">
+                    <div className="w-64 h-8 bg-base-300 rounded-lg" />
+                    <div className="w-96 h-4 bg-base-200 rounded-lg" />
+                </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+                {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="h-24 bg-base-200 rounded-3xl" />
+                ))}
+            </div>
+        </div>
+
+        {/* Content Skeleton */}
+        <div className="space-y-4">
+            <div className="w-48 h-8 bg-base-300 rounded-lg" />
+            <div className="w-full h-12 bg-base-200 rounded-2xl" />
+            <div className="h-64 bg-base-200/50 rounded-[2.5rem] p-8 space-y-4">
+                <div className="w-full h-4 bg-base-300 rounded-lg" />
+                <div className="w-5/6 h-4 bg-base-300 rounded-lg" />
+                <div className="w-4/5 h-4 bg-base-300 rounded-lg" />
+                <div className="w-full h-4 bg-base-300 rounded-lg" />
+            </div>
+        </div>
+    </div>
+);
 
 const DetailLeconEnfant = () => {
     const navigate = useNavigate();
@@ -17,7 +51,11 @@ const DetailLeconEnfant = () => {
     const fetchLecon = async () => {
         try {
             setLoading(true);
-            const response = await api.get(`/enseignant/enfant/lecons/${id}/`);
+            const minDelay = new Promise(resolve => setTimeout(resolve, 800));
+            const [response] = await Promise.all([
+                api.get(`/enseignant/enfant/lecons/${id}/`),
+                minDelay
+            ]);
             setLecon(response.data);
         } catch (err) {
             console.error("Erreur récupération leçon:", err);
@@ -37,125 +75,155 @@ const DetailLeconEnfant = () => {
         enregistrerLecture();
     }, [id]);
 
-    if (loading) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh]">
-                <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
-                <p className="font-black opacity-50 text-lg">Préparation de ta leçon...</p>
-            </div>
-        );
-    }
-
-    if (error || !lecon) {
-        return (
-            <div className="max-w-2xl mx-auto mt-10 p-4">
-                <div className="alert alert-error rounded-3xl shadow-lg font-bold">
-                    <p>{error || "Leçon introuvable"}</p>
-                </div>
-                <button onClick={() => navigate('/enfant/lecons')} className="btn btn-ghost mt-4 w-full font-black">
-                    <ArrowLeft size={18} className="mr-2" /> Retour aux leçons
-                </button>
-            </div>
-        );
-    }
-
     return (
-        <div className="bg-base-200/50 min-h-screen py-8 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-6xl mx-auto bg-base-100 rounded-[3rem] shadow-xl shadow-base-300/50 border border-base-content/5 min-h-[80vh] flex flex-col overflow-hidden">
+        <div className="bg-base-200/30 min-h-screen py-8 px-4 sm:px-6 lg:px-8 font-sans">
+            <div className="max-w-5xl mx-auto bg-base-100 rounded-[3.5rem] shadow-2xl border border-base-200 min-h-[85vh] flex flex-col overflow-hidden">
+                
+                {/* BACK NAVIGATION BAR */}
+                <div className="px-8 pt-8 md:pt-10 flex items-center justify-between border-b border-base-200/10 pb-4">
+                    <button 
+                        onClick={() => navigate('/enfant/lecons')} 
+                        className="btn btn-circle btn-outline border-base-300 hover:bg-primary hover:text-white hover:border-primary transition-all shadow-sm"
+                        title="Retour aux leçons"
+                    >
+                        <ArrowLeft size={20} />
+                    </button>
+                    <span className="text-xs font-black uppercase tracking-widest opacity-40">Mon Cours de Mathématiques</span>
+                </div>
 
-                {/* HEADER */}
-                <div className="p-8 md:p-12 border-b border-base-200 bg-base-100">
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
-                        <div className="flex items-center gap-4">
-                            <button onClick={() => navigate('/enfant/lecons')} className="btn btn-circle btn-ghost">
-                                <ArrowLeft />
+                {/* MAIN CONTENT AREA */}
+                <div className="flex-grow p-8 md:p-12">
+                    {error ? (
+                        <div className="max-w-md mx-auto py-12 flex flex-col items-center text-center space-y-6">
+                            <div className="w-16 h-16 rounded-full bg-error/10 text-error flex items-center justify-center">
+                                <AlertTriangle size={32} />
+                            </div>
+                            <div>
+                                <h3 className="text-2xl font-black mb-1">Mince !</h3>
+                                <p className="opacity-50 font-bold">{error || "Leçon introuvable."}</p>
+                            </div>
+                            <button 
+                                onClick={() => navigate('/enfant/lecons')} 
+                                className="btn btn-ghost w-full rounded-2xl font-black border border-base-300 hover:bg-base-200"
+                            >
+                                <ArrowLeft size={16} className="mr-2" /> Retour aux leçons
                             </button>
-                            <div>
-                                <h1 className="text-4xl font-black text-base-content tracking-tight mb-2">{lecon.titre}</h1>
-                                <p className="text-base-content/50 font-medium italic">{lecon.description}</p>
-                            </div>
                         </div>
-                    </div>
+                    ) : loading ? (
+                        <DetailSkeleton />
+                    ) : !lecon ? (
+                        <div className="text-center py-12 opacity-50 italic">Leçon vide</div>
+                    ) : (
+                        <div className="space-y-10 animate-in fade-in duration-300">
+                            
+                            {/* HEADER CARD */}
+                            <div className="space-y-6">
+                                <div>
+                                    <h1 className="text-3xl md:text-4xl font-black text-base-content tracking-tight">
+                                        {lecon.titre}
+                                    </h1>
+                                    <p className="text-base-content/50 font-medium italic mt-2">
+                                        {lecon.description || "Pas de description fournie."}
+                                    </p>
+                                </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="bg-primary/5 p-6 rounded-[2rem] border border-primary/10 flex items-center gap-4">
-                            <div className="p-3 bg-primary/10 rounded-xl text-primary">
-                                <GraduationCap size={24} />
-                            </div>
-                            <div>
-                                <p className="text-xs font-black opacity-40 uppercase tracking-widest">Classe</p>
-                                <p className="text-xl font-black text-primary">{lecon.classe}</p>
-                            </div>
-                        </div>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div className="bg-indigo-500/[0.03] p-5 rounded-3xl border border-indigo-500/10 flex items-center gap-4 shadow-sm">
+                                        <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-600">
+                                            <GraduationCap size={22} />
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] font-black opacity-45 uppercase tracking-widest">Classe</p>
+                                            <p className="text-lg font-black text-indigo-600">{lecon.classe}</p>
+                                        </div>
+                                    </div>
 
-                        <div className="bg-secondary/5 p-6 rounded-[2rem] border border-secondary/10 flex items-center gap-4">
-                            <div className="p-3 bg-secondary/10 rounded-xl text-secondary">
-                                <Clock size={24} />
-                            </div>
-                            <div>
-                                <p className="text-xs font-black opacity-40 uppercase tracking-widest">Temps</p>
-                                <p className="text-xl font-black text-secondary">{lecon.duree || '45 min'}</p>
-                            </div>
-                        </div>
+                                    <div className="bg-emerald-500/[0.03] p-5 rounded-3xl border border-emerald-500/10 flex items-center gap-4 shadow-sm">
+                                        <div className="p-3 bg-emerald-500/10 rounded-2xl text-emerald-600">
+                                            <Clock size={22} />
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] font-black opacity-45 uppercase tracking-widest">Temps</p>
+                                            <p className="text-lg font-black text-emerald-600">{lecon.duree || '45 min'}</p>
+                                        </div>
+                                    </div>
 
-                        <div className="bg-accent/5 p-6 rounded-[2rem] border border-accent/10 flex items-center gap-4">
-                            <div className="p-3 bg-accent/10 rounded-xl text-accent">
-                                <ClipboardList size={24} />
+                                    <div className="bg-amber-500/[0.03] p-5 rounded-3xl border border-amber-500/10 flex items-center gap-4 shadow-sm">
+                                        <div className="p-3 bg-amber-500/10 rounded-2xl text-amber-600">
+                                            <ClipboardList size={22} />
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] font-black opacity-45 uppercase tracking-widest">Défis</p>
+                                            <p className="text-lg font-black text-amber-600">{lecon.nombre_exercices || 0} exercices</p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div>
-                                <p className="text-xs font-black opacity-40 uppercase tracking-widest">Défis</p>
-                                <p className="text-xl font-black text-accent">{lecon.nombre_exercices || 0} exercices</p>
+
+                            {/* COURSE BODY */}
+                            <div className="space-y-6 pt-4">
+                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-base-200/40 p-4 rounded-3xl border border-base-200">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2.5 bg-primary/10 rounded-2xl text-primary flex-shrink-0">
+                                            <BookOpen size={20} />
+                                        </div>
+                                        <div>
+                                            <h2 className="text-lg font-black text-base-content">Lecture du cours</h2>
+                                            <p className="text-xs opacity-50 font-bold">Écoute ou lis la leçon attentivement.</p>
+                                        </div>
+                                    </div>
+
+                                    {/* VOICE READER */}
+                                    {lecon.contenu && (
+                                        <div className="w-full sm:w-auto">
+                                            <LecteurVocal texte={lecon.contenu} />
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="prose prose-indigo max-w-none font-medium leading-relaxed text-base-content/85 bg-base-200/20 p-8 md:p-12 rounded-[2.5rem] border border-base-200">
+                                    {lecon.contenu ? (
+                                        <ReactMarkdown>{lecon.contenu}</ReactMarkdown>
+                                    ) : (
+                                        <div className="text-center py-12 opacity-40 italic">
+                                            Le contenu de cette leçon n'est pas encore disponible.
+                                        </div>
+                                    )}
+                                </div>
                             </div>
+
+                            {/* ACTION BUTTON */}
+                            <div className="pt-8 border-t border-base-200 mt-8">
+                                {lecon.nombre_exercices > 0 ? (
+                                    <div className="flex flex-col items-center text-center space-y-4">
+                                        <div className="flex items-center gap-2 text-success">
+                                            <CheckCircle size={18} />
+                                            <span className="font-extrabold text-sm text-success-content/80">Leçon terminée !</span>
+                                        </div>
+                                        <p className="font-black text-lg italic opacity-70">
+                                            Tu as tout bien compris ? Testons tes connaissances !
+                                        </p>
+                                        <button
+                                            onClick={() => navigate(`/enfant/lecons/${id}/exercices`)}
+                                            className="btn btn-primary btn-lg rounded-[2rem] px-10 h-16 shadow-xl shadow-primary/20 normal-case font-black text-lg gap-3 hover:scale-105 transition-all text-white"
+                                        >
+                                            <PlayCircle size={24} />
+                                            C'est parti pour les exercices !
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="text-center bg-base-200/30 p-6 rounded-3xl border border-dashed border-base-200">
+                                        <p className="font-bold opacity-40 text-sm">
+                                            Pas encore d'exercices disponibles pour cette leçon.
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+
                         </div>
-                    </div>
+                    )}
                 </div>
 
-                {/* CONTENU DU COURS */}
-                <div className="flex-grow p-8 md:p-12 bg-base-100">
-                    <div className="max-w-4xl mx-auto">
-                        <div className="flex items-center gap-4 mb-8">
-                            <div className="p-3 bg-base-200 rounded-2xl">
-                                <BookOpen className="text-primary" size={24} />
-                            </div>
-                            <h2 className="text-2xl font-black">Lecture du cours</h2>
-                        </div>
-
-                        {/* 2. AJOUT DU LECTEUR VOCAL ICI */}
-                        {lecon.contenu && (
-                            <LecteurVocal texte={lecon.contenu} />
-                        )}
-
-                        <div className="prose prose-lg max-w-none font-medium leading-relaxed whitespace-pre-line text-base-content/80 bg-base-200/30 p-8 md:p-12 rounded-[2.5rem] border border-base-content/5">
-                            {lecon.contenu ? (
-                                <ReactMarkdown>{lecon.contenu}</ReactMarkdown>
-                            ) : (
-                                <div className="text-center py-10 opacity-40 italic">
-                                    Le contenu de cette leçon n'est pas encore disponible.
-                                </div>
-                            )}
-                        </div>
-
-                        {/* SECTION ACTION */}
-                        <div className="mt-12 pt-10 border-t border-base-200">
-                            {lecon.nombre_exercices > 0 ? (
-                                <div className="flex flex-col items-center text-center">
-                                    <p className="font-black text-xl mb-6 italic opacity-70">Tu as tout bien compris ?</p>
-                                    <button
-                                        onClick={() => navigate(`/enfant/lecons/${id}/exercices`)}
-                                        className="btn btn-primary btn-lg rounded-[2rem] px-12 h-20 shadow-2xl shadow-primary/30 normal-case font-black text-2xl gap-4 hover:scale-105 transition-transform"
-                                    >
-                                        <PlayCircle size={32} />
-                                        C'est parti pour les exercices !
-                                    </button>
-                                </div>
-                            ) : (
-                                <div className="text-center bg-base-200/50 p-8 rounded-3xl border border-dashed border-base-content/10">
-                                    <p className="font-bold opacity-40">Pas encore d'exercices disponibles pour cette leçon.</p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     );
