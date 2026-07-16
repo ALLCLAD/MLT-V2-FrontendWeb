@@ -42,7 +42,7 @@ const ApercuEnfant = () => {
                 ]);
                 setStats(response.data);
             } catch (err) {
-                setStats({ prenom: "Aventurier", niveau: 1, xp: 45, streak: 3, totalEtoiles: 120, dernierScore: 18 });
+                setStats({ prenom: "Aventurier", niveau: 1, xp: 45, streak: 3, totalEtoiles: 24, dernierScore: 14 });
             } finally { 
                 setLoading(false); 
             }
@@ -125,14 +125,14 @@ const ApercuEnfant = () => {
                                     </div>
                                     <span className="text-xs font-black uppercase tracking-widest text-base-content/40">Énergie d'apprentissage</span>
                                 </div>
-                                <span className="text-3xl font-black text-primary tracking-tighter">{stats.xp}%</span>
+                                <span className="text-3xl font-black text-primary tracking-tighter">{Math.round(stats.xp)}<span className="text-base font-bold opacity-50">/100 XP</span></span>
                             </div>
 
                             {/* Barre de progression adaptée */}
                             <div className="h-5 w-full bg-base-300 rounded-full overflow-hidden p-1 shadow-inner border border-base-300/50">
                                 <div
                                     className="h-full bg-primary rounded-full transition-all duration-1000 ease-out shadow-lg"
-                                    style={{ width: `${stats.xp}%` }}
+                                    style={{ width: `${Math.min(stats.xp, 100)}%` }}
                                 ></div>
                             </div>
                         </div>
@@ -151,7 +151,7 @@ const ApercuEnfant = () => {
                     <div className="grid grid-cols-3 gap-4 md:gap-6">
                         <StatItem icon={Flame} value={stats.streak} label="Jours consécutifs" color="text-orange-500" bg="bg-orange-500/5" />
                         <StatItem icon={Star} value={stats.totalEtoiles} label="Étoiles collectées" color="text-amber-500" bg="bg-amber-500/5" />
-                        <StatItem icon={Target} value={`${stats.dernierScore}/20`} label="Dernier score" color="text-emerald-500" bg="bg-emerald-500/5" />
+                        <StatItem icon={Target} value={stats.dernierScore > 0 ? `${stats.dernierScore}/20` : '–'} label="Dernier score" color="text-emerald-500" bg="bg-emerald-500/5" />
                     </div>
                 </div>
 

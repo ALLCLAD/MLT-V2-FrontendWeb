@@ -188,26 +188,33 @@ export const genererExercices = async (titre, classe, contenu) => {
                 {
                     role: "system",
                     content: `Tu es un expert en pédagogie primaire au Togo. 
-                    Génère exactement ${nbExercices} exercices au format JSON.
+                    Génère exactement ${nbExercices} exercices au format JSON avec des types variés (mélange de QCM, CALCUL_ECRIT, CALCUL_MENTAL et PROBLEME).
                     
                     CONSIGNES POUR LES EXERCICES :
-                    - Propose des exercices très concrets et pratiques, basés sur des situations de la vie réelle.
+                    - Propose des exercices très concrets et pratiques, basés sur des situations de la vie réelle togolaise.
                     - Les questions doivent être claires et avoir un intérêt mathématique rigoureux.
                     - ZERO EMOJI : Ne mets aucun émoji dans tes questions ou explications.
+
+                    RÈGLES POUR LES TYPES D'EXERCICES :
+                    1. QCM : Questions théoriques classiques. Renseigne "question", "reponse_correcte", "mauvaises_reponses" (séparées par des virgules) et laisse "donnees_exercice" à null.
+                    2. CALCUL_ECRIT : Exercices de calcul posé en colonnes (ex: addition, soustraction, multiplication). Renseigne "type_exercice": "CALCUL_ECRIT", "question": "Pose et effectue : A [opérateur] B", "reponse_correcte": "résultat", et "donnees_exercice": {"operande1": "A", "operande2": "B", "operateur": "+ ou - ou x"}.
+                    3. CALCUL_MENTAL : Exercices de calcul rapide en ligne. Renseigne "type_exercice": "CALCUL_MENTAL", "question": "Calcule : A x B", "reponse_correcte": "résultat", et laisse "donnees_exercice" à null.
+                    4. PROBLEME : Petit énoncé guidé. Renseigne "type_exercice": "PROBLEME", "question": "L'énoncé de l'histoire...", "reponse_correcte": "résultat", et "donnees_exercice": {"operation_attendue": "addition | soustraction | multiplication | division", "unite": "FCFA | ignames | etc."}.
 
                     RÈGLES DE RÉDACTION POUR LA VOIX (CRITIQUE) :
                     1. LONGUEUR : La question doit faire entre 50 et 120 caractères maximum.
                     2. STRUCTURE : Fais des phrases courtes et directes. Utilise des points (.) pour créer des pauses.
-                    3. MATHÉMATIQUES : Écris les calculs simplement (ex: 12 + 5 ou 4 x 3). 
-                    4. STYLE : Utilise des prénoms (Koffi, Ablavi) et des contextes locaux concrets (marché, francs CFA).
-                    5. EXPLICATION : Doit être très concrète, courte (max 80 caractères) et commencer par "C'est simple !". Explique la méthode mathématique directement, sans blabla ni émoji.
+                    3. STYLE : Utilise des prénoms (Koffi, Ablavi) et des contextes locaux (marché d'Assigamé, francs CFA).
+                    4. EXPLICATION : Doit être très concrète, courte (max 80 caractères) et commencer par "C'est simple !". Explique la méthode mathématique directement.
 
                     FORMAT JSON STRICT :
                     [
                         {
-                            "question": "Texte court et concret. Ponctuation claire.",
+                            "type_exercice": "QCM ou CALCUL_ECRIT ou CALCUL_MENTAL ou PROBLEME",
+                            "question": "Texte court et concret.",
                             "reponse_correcte": "La réponse",
-                            "mauvaises_reponses": "r1, r2, r3",
+                            "mauvaises_reponses": "r1, r2, r3 (seulement si QCM)",
+                            "donnees_exercice": null (ou objet JSON comme spécifié ci-dessus),
                             "explication": "C'est simple ! On fait...",
                             "ordre": 1
                         }

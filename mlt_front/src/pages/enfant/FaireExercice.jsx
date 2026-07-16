@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Loader2, BrainCircuit, Trophy, ArrowRight, Timer, Lightbulb, Star, ChevronLeft, Sparkles } from 'lucide-react';
+import { Loader2, BrainCircuit, Trophy, ArrowRight, Timer, Lightbulb, Star, ChevronLeft, Sparkles, Pencil, LayoutGrid } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import api from '../../apiDjango/api.jsx';
 import { getMathyFeedback } from '../../apiDjango/aiService';
 import { speakText, speakTextSafe, stopAllAudio } from '../../apiDjango/ttsService';
+import BrouillonCanvas from '../../composants/UIenfant/BrouillonCanvas';
+import BatonnetsComptage from '../../composants/UIenfant/BatonnetsComptage';
+import ExerciseRenderer from '../../composants/UIenfant/ExerciseRenderer';
 
 const CORRECT_PHRASES = [
     "Super ! C'est ça.",
@@ -95,6 +98,10 @@ const FaireExercice = () => {
     const [isSaving, setIsSaving] = useState(false);
 
     const [isReading, setIsReading] = useState(false);
+    const [isBrouillonOpen, setIsBrouillonOpen] = useState(false);
+    const [brouillonMode, setBrouillonMode] = useState('docked'); // 'docked' | 'floating' | 'modal'
+    const [isBatonnetsOpen, setIsBatonnetsOpen] = useState(false);
+    const [batonnetsMode, setBatonnetsMode] = useState('docked'); // 'docked' | 'floating' | 'modal'
 
     const timerRef = useRef(null);
     const scoreRef = useRef(0);
@@ -173,6 +180,12 @@ const FaireExercice = () => {
         return [...new Set(toutes)].sort(() => Math.random() - 0.5);
     }, [currentIndex, exercices]);
 
+    const formatTime = (seconds) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    };
+
     // --- 3. LOGIQUE DU TIMER ---
     useEffect(() => {
         if (loading || quizFinished || showFeedback || isReading) {
@@ -180,8 +193,15 @@ const FaireExercice = () => {
             return;
         }
 
-        // CHANGEMENT : Réinitialisation à 60 secondes à chaque question
-        setTimeLeft(60);
+        const currentExo = exercices[currentIndex];
+        const typeEx = currentExo?.type_exercice || currentExo?.type || 'QCM';
+
+        const initialTime = typeEx === 'PROBLEME' ? 1800
+            : typeEx === 'CALCUL_ECRIT' ? 900
+            : typeEx === 'CALCUL_MENTAL' ? 30
+            : 60;
+        setTimeLeft(initialTime);
+        
         timerRef.current = setInterval(() => {
             setTimeLeft((prev) => {
                 if (prev <= 1) {
@@ -195,7 +215,7 @@ const FaireExercice = () => {
         return () => {
             if (timerRef.current) clearInterval(timerRef.current);
         };
-    }, [currentIndex, loading, quizFinished, showFeedback, isReading]);
+    }, [currentIndex, loading, quizFinished, showFeedback, isReading, exercices]);
 
     // --- 4. ACTIONS ---
     const handleOptionClick = async (option) => {
@@ -286,7 +306,7 @@ const FaireExercice = () => {
             setHint(hintMsg);
             speakTextSafe(hintMsg); // Lecture directe de l'aide pour l'enfant
         } catch (err) {
-            const fallbackHint = "Réfléchis bien à la consigne ! ✨";
+            const fallbackHint = "Réfléchis bien à la consigne !";
             setHint(fallbackHint);
             speakTextSafe("Réfléchis bien à la consigne !");
         } finally {
@@ -308,148 +328,199 @@ const FaireExercice = () => {
         </div>
     );
 
-    return (
-        <div className="min-h-screen bg-base-200/30 p-4 font-sans text-slate-800">
-            <div className="max-w-4xl mx-auto bg-base-100 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col min-h-[85vh] border border-base-200 relative animate-in fade-in duration-500">
+    const anyOpen = isBrouillonOpen || isBatonnetsOpen;
 
-                {/* HEADER */}
-                <div className="px-6 py-4 flex justify-between items-center border-b border-base-200 bg-gradient-to-r from-base-100 to-base-200/20">
-                    <button onClick={() => { stopAllAudio(); navigate(-1); }} className="text-base-content/40 hover:text-error font-black text-xs flex items-center gap-1 transition-colors">
-                        <ChevronLeft size={16} /> QUITTER
+    const cardContent = (
+        <div className="flex-1 flex flex-col justify-between">
+            {/* HEADER */}
+            <div className="px-6 py-4 flex justify-between items-center border-b border-base-200 bg-gradient-to-r from-base-100 to-base-200/20">
+                <button onClick={() => { stopAllAudio(); navigate(-1); }} className="text-base-content/40 hover:text-error font-black text-xs flex items-center gap-1 transition-colors">
+                    <ChevronLeft size={16} /> QUITTER
+                </button>
+                
+                {/* Outils d'aide brouillon et bâtonnets */}
+                <div className="flex gap-2">
+                    <button 
+                        onClick={() => {
+                            setIsBrouillonOpen(!isBrouillonOpen);
+                            if (!isBrouillonOpen) {
+                                setIsBatonnetsOpen(false);
+                            }
+                        }}
+                        className={`btn btn-sm rounded-xl font-black flex items-center gap-1.5 text-[11px] hover:scale-105 transition-all ${isBrouillonOpen ? 'btn-primary px-3' : 'btn-outline btn-primary'}`}
+                        title="Brouillon"
+                    >
+                        <Pencil size={12} />
+                        {!anyOpen && <span className="hidden sm:inline">Brouillon</span>}
                     </button>
-                    <div className="flex gap-1">
-                        {[...Array(3)].map((_, i) => (
-                            <Star key={i} size={18} className={i < hintsLeft ? 'text-amber-400 fill-amber-400' : 'text-base-300'} />
-                        ))}
-                    </div>
+                    <button 
+                        onClick={() => {
+                            setIsBatonnetsOpen(!isBatonnetsOpen);
+                            if (!isBatonnetsOpen) {
+                                setIsBrouillonOpen(false);
+                            }
+                        }}
+                        className={`btn btn-sm rounded-xl font-black flex items-center gap-1.5 text-[11px] hover:scale-105 transition-all ${isBatonnetsOpen ? 'btn-warning text-white px-3' : 'btn-outline btn-warning'}`}
+                        title="Bâtonnets"
+                    >
+                        <LayoutGrid size={12} />
+                        {!anyOpen && <span className="hidden sm:inline">Bâtonnets</span>}
+                    </button>
                 </div>
 
-                {/* PROGRESSION */}
-                <div className="px-8 pt-4 pb-2">
-                    <div className="flex justify-between items-end mb-2 px-1">
-                        <span className="text-[10px] font-black text-primary uppercase tracking-widest">Leçon : {leconTitre}</span>
-                        <span className="text-[10px] font-black opacity-30 italic">{currentIndex + 1} / {exercices.length}</span>
-                    </div>
-                    <div className="w-full h-3 bg-base-200 rounded-full overflow-hidden p-[2px] border border-base-300 shadow-inner">
-                        <div
-                            className="h-full bg-gradient-to-r from-primary/80 to-primary rounded-full transition-all duration-700 ease-out"
-                            style={{ width: `${((currentIndex + 1) / exercices.length) * 100}%` }}
-                        ></div>
-                    </div>
+                <div className="flex gap-1">
+                    {[...Array(3)].map((_, i) => (
+                        <Star key={i} size={18} className={i < hintsLeft ? 'text-amber-400 fill-amber-400' : 'text-base-300'} />
+                    ))}
                 </div>
+            </div>
 
-                <div className="flex-1 p-6 flex flex-col items-center">
-                    {!quizFinished ? (
-                        <div className="w-full max-w-2xl flex-1 flex flex-col">
-                            {/* INDICATEUR DE LECTURE VOCALE */}
-                            {isReading && (
-                                <div className="flex items-center justify-center gap-2 text-primary animate-pulse py-3">
-                                    <span className="text-2xl">🔊</span>
-                                    <span className="text-xs font-black uppercase tracking-widest">
-                                        Mathy lit la question...
-                                    </span>
-                                </div>
-                            )}
+            {/* PROGRESSION */}
+            <div className="px-8 pt-4 pb-2">
+                <div className="flex justify-between items-end mb-2 px-1">
+                    <span className="text-[10px] font-black text-primary uppercase tracking-widest">Leçon : {leconTitre}</span>
+                    <span className="text-[10px] font-black opacity-30 italic">{currentIndex + 1} / {exercices.length}</span>
+                </div>
+                <div className="w-full h-3 bg-base-200 rounded-full overflow-hidden p-[2px] border border-base-300 shadow-inner">
+                    <div
+                        className="h-full bg-gradient-to-r from-primary/80 to-primary rounded-full transition-all duration-700 ease-out"
+                        style={{ width: `${((currentIndex + 1) / exercices.length) * 100}%` }}
+                    ></div>
+                </div>
+            </div>
 
-                            {/* QUESTION */}
-                            <div className="text-center py-6">
-                                <h1 className="text-2xl md:text-3xl font-bold text-base-content leading-tight">
-                                    {exercices[currentIndex]?.question}
-                                </h1>
-                            </div>
-
-                            {/* OPTIONS & TIMER */}
-                            <div className="flex flex-col md:flex-row items-center gap-6 mb-8">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 flex-1 w-full">
-                                    {optionsStyleQuiz.map((option, index) => (
-                                        <button
-                                            key={index}
-                                            onClick={() => handleOptionClick(option)}
-                                            disabled={showFeedback}
-                                            className={`flex items-center p-4 rounded-2xl border-2 transition-all font-bold text-lg
-                                            ${showFeedback
-                                                ? option === exercices[currentIndex].reponse_correcte
-                                                    ? 'bg-success/10 border-success text-success'
-                                                    : option === selectedAnswer ? 'bg-error/10 border-error text-error opacity-70' : 'bg-base-100 border-base-200 opacity-40'
-                                                : 'bg-base-100 border-base-200 hover:border-primary hover:bg-primary/5 text-base-content shadow-sm'}`}
-                                        >
-                                            <div className="w-7 h-7 rounded-lg bg-base-200 flex items-center justify-center text-[10px] mr-3 text-base-content/50 shadow-inner shrink-0">
-                                                {String.fromCharCode(65 + index)}
-                                            </div>
-                                            <span className="flex-1 text-center">{option}</span>
-                                        </button>
-                                    ))}
-                                </div>
-
-                                <div className="bg-primary/10 p-4 rounded-3xl border border-primary/20 flex md:flex-col items-center gap-2 min-w-[80px]">
-                                    <Timer size={18} className="text-primary" />
-                                    <span className="font-black text-2xl tabular-nums text-primary">{timeLeft}s</span>
-                                </div>
-                            </div>
-
-                            {/* ZONE INDICE */}
-                            <div className="flex flex-col items-center justify-center py-4 mt-auto">
-                                {showHintBox && (
-                                    <div className="mb-4 bg-base-100 border border-primary/20 p-4 rounded-2xl shadow-xl animate-in zoom-in-95 max-w-sm text-center">
-                                        <p className="text-base-content/80 font-bold text-sm italic">
-                                            {isAiLoading ? "Mathy réfléchit..." : hint}
-                                        </p>
-                                    </div>
-                                )}
-                                <button
-                                    onClick={handleUseHint}
-                                    disabled={hintsLeft <= 0 || showFeedback || isAiLoading || showHintBox}
-                                    className={`relative group transition-all duration-300 ${hintsLeft > 0 && !showFeedback ? 'hover:scale-110 active:scale-90' : 'opacity-40 grayscale'}`}
-                                >
-                                    <div className={`w-16 h-16 rounded-full flex items-center justify-center border-4 shadow-lg relative z-10 ${showHintBox ? 'bg-amber-400 border-white text-white' : 'bg-base-100 border-amber-100 text-amber-500'}`}>
-                                        <Lightbulb size={32} fill={showHintBox ? "white" : "none"} />
-                                        <div className="absolute -top-1 -right-1 bg-base-content text-base-100 text-[10px] font-black w-6 h-6 rounded-full flex items-center justify-center border-2 border-base-100">
-                                            {hintsLeft}
-                                        </div>
-                                    </div>
-                                </button>
-                            </div>
-
-                            {/* ZONE FEEDBACK */}
-                            {showFeedback && (
-                                <div className="mt-6 animate-in slide-in-from-bottom-4 duration-300">
-                                    <div className="bg-neutral text-neutral-content p-5 rounded-[2rem] shadow-xl">
-                                        <div className="flex items-center gap-4 mb-4">
-                                            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shrink-0 text-primary-content">
-                                                <BrainCircuit size={20} />
-                                            </div>
-                                            <p className="text-sm md:text-base font-bold italic flex-1">
-                                                {isAiLoading ? "Mathy écrit..." : aiFeedback}
-                                            </p>
-                                        </div>
-                                        <button onClick={handleNext} className="btn btn-primary btn-block rounded-2xl h-12 font-black shadow-lg">
-                                            {currentIndex < exercices.length - 1 ? 'CONTINUER' : 'VOIR MON RÉSULTAT'} <ArrowRight size={18} className="ml-2" />
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    ) : (
-                        /* ÉCRAN DE FIN */
-                        <div className="flex-1 flex flex-col items-center justify-center text-center space-y-6 animate-in zoom-in-95">
-                            <div className="relative">
-                                <Trophy size={100} className="text-amber-400" />
-                                <Sparkles size={40} className="absolute -top-4 -right-4 text-primary animate-pulse" />
-                            </div>
-                            <h2 className="text-4xl font-black text-base-content uppercase">Bravo !</h2>
-                            <div className="bg-primary text-primary-content p-10 rounded-[3rem] shadow-2xl">
-                                <span className="text-7xl font-black italic">
-                                    {exercices.length > 0 ? Math.round((scoreRef.current / exercices.length) * 20) : 0}
+            <div className="flex-1 p-6 flex flex-col items-center justify-center min-h-[50vh]">
+                {!quizFinished ? (
+                    <div className="w-full max-w-2xl flex-1 flex flex-col">
+                        {/* INDICATEUR DE LECTURE VOCALE */}
+                        {isReading && (
+                            <div className="flex items-center justify-center gap-2 text-primary animate-pulse py-3">
+                                <span className="text-xs font-black uppercase tracking-widest">
+                                    Lecture en cours...
                                 </span>
-                                <span className="text-2xl opacity-50">/20</span>
                             </div>
-                            <p className="text-base-content/40 font-bold italic">Leçon : {leconTitre}</p>
-                            {isSaving && <p className="text-[10px] font-black uppercase opacity-50 animate-pulse tracking-widest">Enregistrement...</p>}
-                            <button onClick={() => navigate('/enfant/lecons')} className="btn btn-outline btn-primary rounded-2xl px-12 font-black border-4">
-                                RETOUR AUX LEÇONS
+                        )}
+
+                        {/* QUESTION */}
+                        <div className="text-center py-6">
+                            <h1 className="text-2xl md:text-3xl font-bold text-base-content leading-tight">
+                                {exercices[currentIndex]?.question}
+                            </h1>
+                        </div>
+
+                        {/* OPTIONS & TIMER */}
+                        <div className="flex flex-col md:flex-row items-center gap-6 mb-8 w-full">
+                            <div className="flex-1 w-full flex justify-center">
+                                <ExerciseRenderer
+                                    question={exercices[currentIndex]}
+                                    onResolve={handleOptionClick}
+                                    showFeedback={showFeedback}
+                                    selectedAnswer={selectedAnswer}
+                                    disabled={isAiLoading}
+                                />
+                            </div>
+
+                            <div className="bg-primary/10 p-4 rounded-3xl border border-primary/20 flex md:flex-col items-center gap-2 min-w-[90px] shrink-0">
+                                <Timer size={18} className="text-primary" />
+                                <span className="font-black text-xl tabular-nums text-primary">{formatTime(timeLeft)}</span>
+                            </div>
+                        </div>
+
+                        {/* ZONE INDICE */}
+                        <div className="flex flex-col items-center justify-center py-4 mt-auto">
+                            {showHintBox && (
+                                <div className="mb-4 bg-base-100 border border-primary/20 p-4 rounded-2xl shadow-xl animate-in zoom-in-95 max-w-sm text-center">
+                                    <p className="text-base-content/80 font-bold text-sm italic">
+                                        {isAiLoading ? "Mathy réfléchit..." : hint}
+                                    </p>
+                                </div>
+                            )}
+                            <button
+                                onClick={handleUseHint}
+                                disabled={hintsLeft <= 0 || showFeedback || isAiLoading || showHintBox}
+                                className={`relative group transition-all duration-300 ${hintsLeft > 0 && !showFeedback ? 'hover:scale-110 active:scale-90' : 'opacity-40 grayscale'}`}
+                            >
+                                <div className={`w-16 h-16 rounded-full flex items-center justify-center border-4 shadow-lg relative z-10 ${showHintBox ? 'bg-amber-400 border-white text-white' : 'bg-base-100 border-amber-100 text-amber-500'}`}>
+                                    <Lightbulb size={32} fill={showHintBox ? "white" : "none"} />
+                                    <div className="absolute -top-1 -right-1 bg-base-content text-base-100 text-[10px] font-black w-6 h-6 rounded-full flex items-center justify-center border-2 border-base-100">
+                                        {hintsLeft}
+                                    </div>
+                                </div>
                             </button>
                         </div>
+
+                        {/* ZONE FEEDBACK */}
+                        {showFeedback && (
+                            <div className="mt-6 animate-in slide-in-from-bottom-4 duration-300">
+                                <div className="bg-neutral text-neutral-content p-5 rounded-[2rem] shadow-xl">
+                                    <div className="flex items-center gap-4 mb-4">
+                                        <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shrink-0 text-primary-content">
+                                            <BrainCircuit size={20} />
+                                        </div>
+                                        <p className="text-sm md:text-base font-bold italic flex-1">
+                                            {isAiLoading ? "Mathy écrit..." : aiFeedback}
+                                        </p>
+                                    </div>
+                                    <button onClick={handleNext} className="btn btn-primary btn-block rounded-2xl h-12 font-black shadow-lg">
+                                        {currentIndex < exercices.length - 1 ? 'CONTINUER' : 'VOIR MON RÉSULTAT'} <ArrowRight size={18} className="ml-2" />
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    /* ÉCRAN DE FIN */
+                    <div className="flex-1 flex flex-col items-center justify-center text-center space-y-6 animate-in zoom-in-95">
+                        <div className="relative">
+                            <Trophy size={100} className="text-amber-400" />
+                            <Sparkles size={40} className="absolute -top-4 -right-4 text-primary animate-pulse" />
+                        </div>
+                        <h2 className="text-4xl font-black text-base-content uppercase">Bravo !</h2>
+                        <div className="bg-primary text-primary-content p-10 rounded-[3rem] shadow-2xl">
+                            <span className="text-7xl font-black italic">
+                                {exercices.length > 0 ? Math.round((scoreRef.current / exercices.length) * 20) : 0}
+                            </span>
+                            <span className="text-2xl opacity-50">/20</span>
+                        </div>
+                        <p className="text-base-content/40 font-bold italic">Leçon : {leconTitre}</p>
+                        {isSaving && <p className="text-[10px] font-black uppercase opacity-50 animate-pulse tracking-widest">Enregistrement...</p>}
+                        <button onClick={() => navigate('/enfant/lecons')} className="btn btn-outline btn-primary rounded-2xl px-12 font-black border-4">
+                            RETOUR AUX LEÇONS
+                        </button>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+
+    return (
+        <div className="min-h-screen bg-base-200/30 p-4 font-sans text-slate-800 flex items-start justify-center pt-6">
+            <div className={`w-full transition-all duration-300 ${anyOpen ? 'max-w-6xl' : 'max-w-4xl'}`}>
+                <div className={`bg-base-100 rounded-[2.5rem] shadow-2xl border border-base-200 overflow-hidden flex flex-col ${anyOpen ? 'lg:flex-row' : ''}`}>
+                    
+                    {/* ── COLONNE PRINCIPALE ── */}
+                    <div className="flex-1 flex flex-col min-h-[75vh]">
+                        {cardContent}
+                    </div>
+
+                    {/* ── PANNEAU OUTIL DOCKÉ ── */}
+                    {anyOpen && (
+                        <div className="w-full lg:w-[360px] shrink-0 border-t lg:border-t-0 lg:border-l border-base-200/60 bg-base-200/5 p-4 flex flex-col h-[50vh] lg:h-auto justify-stretch">
+                            {isBrouillonOpen && (
+                                <BrouillonCanvas
+                                    isOpen={isBrouillonOpen}
+                                    onClose={() => setIsBrouillonOpen(false)}
+                                />
+                            )}
+                            {isBatonnetsOpen && (
+                                <BatonnetsComptage
+                                    isOpen={isBatonnetsOpen}
+                                    onClose={() => setIsBatonnetsOpen(false)}
+                                />
+                            )}
+                        </div>
                     )}
+
                 </div>
             </div>
         </div>
