@@ -86,6 +86,14 @@ const ExerciseRenderer = ({ question, onResolve, showFeedback, selectedAnswer, d
             );
 
         case 'CALCUL_MENTAL':
+            return (
+                <CalculMentalView
+                    question={question}
+                    onResolve={onResolve}
+                    disabled={showFeedback || disabled}
+                />
+            );
+
         case 'QCM':
         default:
             return (

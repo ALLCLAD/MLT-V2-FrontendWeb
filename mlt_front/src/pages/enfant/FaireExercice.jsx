@@ -402,11 +402,13 @@ const FaireExercice = () => {
                         )}
 
                         {/* QUESTION */}
-                        <div className="text-center py-6">
-                            <h1 className="text-2xl md:text-3xl font-bold text-base-content leading-tight">
-                                {exercices[currentIndex]?.question}
-                            </h1>
-                        </div>
+                        {(exercices[currentIndex]?.type_exercice || exercices[currentIndex]?.type || 'QCM') !== 'PROBLEME' && (
+                            <div className="text-center py-6">
+                                <h1 className="text-2xl md:text-3xl font-bold text-base-content leading-tight">
+                                    {exercices[currentIndex]?.question}
+                                </h1>
+                            </div>
+                        )}
 
                         {/* OPTIONS & TIMER */}
                         <div className="flex flex-col md:flex-row items-center gap-6 mb-8 w-full">

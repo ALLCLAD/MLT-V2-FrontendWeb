@@ -430,7 +430,7 @@ const CreerLecon = () => {
             const leconResponse = await api.post("/enseignant/lecons/", { ...formData, contenu: contenuGenere });
             const leconId = leconResponse.data.id;
             setEtape("Mathy génère les exercices associés...");
-            const exercices = await genererExercices(formData.titre, formData.classe, contenuGenere);
+            const exercices = await genererExercices(formData.titre, formData.classe, contenuGenere, formData.theme);
             if (exercices && exercices.length > 0) {
                 setEtape("Sauvegarde des exercices...");
                 for (const exercice of exercices) {

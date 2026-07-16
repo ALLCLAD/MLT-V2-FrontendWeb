@@ -179,7 +179,7 @@ Réécris ce contenu en Markdown pédagogique clair.`
  * FONCTION 3 : Génération dynamique d'exercices (JSON)
  * OPTIMISÉE POUR LA VOIX MATHY
  */
-export const genererExercices = async (titre, classe, contenu) => {
+export const genererExercices = async (titre, classe, contenu, theme = '') => {
     const nbExercices = getNombreExercicesParClasse(classe);
 
     try {
@@ -188,7 +188,11 @@ export const genererExercices = async (titre, classe, contenu) => {
                 {
                     role: "system",
                     content: `Tu es un expert en pédagogie primaire au Togo. 
-                    Génère exactement ${nbExercices} exercices au format JSON avec des types variés (mélange de QCM, CALCUL_ECRIT, CALCUL_MENTAL et PROBLEME).
+                    Génère exactement ${nbExercices} exercices au format JSON avec des types variés adaptés au thème et au contenu de la leçon.
+                    
+                    ADAPTATION DES TYPES D'EXERCICES AU THÈME :
+                    - Si le thème est "CALCUL" (Calcul et Opérations), propose un mélange équilibré de CALCUL_ECRIT, CALCUL_MENTAL, PROBLEME et QCM.
+                    - Si le thème est "GEOMETRIE", "DENOMBREMENT" ou "GRANDEURS", propose principalement des QCM, des PROBLEME (ex: calcul de périmètre, conversion de mesure) et éventuellement du CALCUL_MENTAL. N'utilise CALCUL_ECRIT (calcul posé en colonnes) que si cela s'y prête directement (ex: additionner des grandeurs/mesures).
                     
                     CONSIGNES POUR LES EXERCICES :
                     - Propose des exercices très concrets et pratiques, basés sur des situations de la vie réelle togolaise.
@@ -197,7 +201,7 @@ export const genererExercices = async (titre, classe, contenu) => {
 
                     RÈGLES POUR LES TYPES D'EXERCICES :
                     1. QCM : Questions théoriques classiques. Renseigne "question", "reponse_correcte", "mauvaises_reponses" (séparées par des virgules) et laisse "donnees_exercice" à null.
-                    2. CALCUL_ECRIT : Exercices de calcul posé en colonnes (ex: addition, soustraction, multiplication). Renseigne "type_exercice": "CALCUL_ECRIT", "question": "Pose et effectue : A [opérateur] B", "reponse_correcte": "résultat", et "donnees_exercice": {"operande1": "A", "operande2": "B", "operateur": "+ ou - ou x"}.
+                    2. CALCUL_ECRIT : Exercices de calcul posé en colonnes (ex: addition, soustraction, multiplication). Renseigne "type_exercice": "CALCUL_ECRIT", "question": "Pose et effectue : A [opérateur] B", "reponse_correcte": "résultat", et "donnees_exercice": {"operande1": "A", "operande2": "B", "operateur": "+ ou - ou x"}. Les opérandes doivent être des nombres entiers ou décimaux cohérents avec le niveau scolaire.
                     3. CALCUL_MENTAL : Exercices de calcul rapide en ligne. Renseigne "type_exercice": "CALCUL_MENTAL", "question": "Calcule : A x B", "reponse_correcte": "résultat", et laisse "donnees_exercice" à null.
                     4. PROBLEME : Petit énoncé guidé. Renseigne "type_exercice": "PROBLEME", "question": "L'énoncé de l'histoire...", "reponse_correcte": "résultat", et "donnees_exercice": {"operation_attendue": "addition | soustraction | multiplication | division", "unite": "FCFA | ignames | etc."}.
 
@@ -207,7 +211,7 @@ export const genererExercices = async (titre, classe, contenu) => {
                     3. STYLE : Utilise des prénoms (Koffi, Ablavi) et des contextes locaux (marché d'Assigamé, francs CFA).
                     4. EXPLICATION : Doit être très concrète, courte (max 80 caractères) et commencer par "C'est simple !". Explique la méthode mathématique directement.
 
-                    FORMAT JSON STRICT :
+                    FORMAT JSON STRICT (Ne retourne rien d'autre que le tableau JSON) :
                     [
                         {
                             "type_exercice": "QCM ou CALCUL_ECRIT ou CALCUL_MENTAL ou PROBLEME",
@@ -222,7 +226,7 @@ export const genererExercices = async (titre, classe, contenu) => {
                 },
                 {
                     role: "user",
-                    content: `Niveau ${classe}. Thème : "${titre}". Contenu : "${contenu?.substring(0, 500)}".`
+                    content: `Niveau ${classe}. Thème de la leçon : "${theme || 'Calcul'}". Titre : "${titre}". Contenu de la leçon : "${contenu?.substring(0, 1000)}".`
                 }
             ],
             model: "llama-3.3-70b-versatile",
