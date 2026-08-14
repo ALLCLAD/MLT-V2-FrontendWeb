@@ -268,9 +268,8 @@ const QuizEngine = ({ theme, typeFilter = 'QCM', onBack }) => {
     const saveScore = async (finalScore) => {
         setIsSaving(true);
         try {
-            const noteSur20 = Math.round((finalScore / questions.length) * 20);
             await api.post('/quiz/save-score/', {
-                points: noteSur20,
+                points: finalScore,
                 total_questions: questions.length,
                 temps: 60 - timeLeft,
                 theme: theme
@@ -488,7 +487,7 @@ const QuizEngine = ({ theme, typeFilter = 'QCM', onBack }) => {
 
     return (
         <div className="min-h-screen bg-base-200/30 p-4 font-sans text-slate-800 flex items-start justify-center pt-6">
-            <div className={`w-full transition-all duration-300 ${isDockedToolOpen ? 'max-w-6xl' : 'max-w-4xl'}`}>
+            <div className={`w-full transition-all duration-300 ${isDockedToolOpen ? 'max-w-[1400px]' : 'max-w-5xl'}`}>
                 <div className={`bg-base-100 rounded-[2.5rem] shadow-2xl border border-base-200 overflow-hidden flex flex-col ${isDockedToolOpen ? 'lg:flex-row' : ''}`}>
                     
                     {/* ── COLONNE PRINCIPALE ── */}
@@ -498,7 +497,7 @@ const QuizEngine = ({ theme, typeFilter = 'QCM', onBack }) => {
 
                     {/* ── PANNEAU OUTIL DOCKÉ ── */}
                     {isDockedToolOpen && (
-                        <div className="w-full lg:w-[360px] shrink-0 border-t lg:border-t-0 lg:border-l border-base-200/60 bg-base-200/5 p-4 flex flex-col h-[50vh] lg:h-auto justify-stretch">
+                        <div className="w-full lg:w-[480px] shrink-0 border-t lg:border-t-0 lg:border-l border-base-200/60 bg-base-200/5 p-4 flex flex-col h-[50vh] lg:h-auto justify-stretch">
                             {isBrouillonOpen && (
                                 <BrouillonCanvas
                                     isOpen={isBrouillonOpen}

@@ -119,10 +119,10 @@ const MoyenneCard = ({ moyenne }) => {
                     </div>
                     <p className="text-sm text-base-content/50 font-medium italic">
                         {moyenne >= 15
-                            ? "🎉 Résultats excellents ! La classe progresse à merveille."
+                            ? "Résultats excellents ! La classe progresse à merveille."
                             : moyenne >= 10
-                                ? "📈 Des progrès encourageants. Continuez sur cette lancée !"
-                                : "💪 Des efforts à fournir. Motivez vos élèves !"}
+                                ? "Des progrès encourageants. Continuez sur cette lancée !"
+                                : "Des efforts à fournir. Motivez vos élèves !"}
                     </p>
                 </div>
             </div>

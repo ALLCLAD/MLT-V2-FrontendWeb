@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import SidebarParent from '../UIparent/SidebarParent';
-import NavbarDash from '../UIparent/NavDash.jsx';
+import NavbarDash from '../UI/NavDash.jsx';
 
 const LayoutParent = () => {
     return (

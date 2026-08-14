@@ -238,7 +238,7 @@ const CalculEcritEngine = ({ onBack }) => {
 
     return (
         <div className="min-h-screen bg-base-200/30 p-4 font-sans flex items-start justify-center pt-6">
-            <div className={`w-full transition-all duration-300 ${anyOpen ? 'max-w-6xl' : 'max-w-4xl'}`}>
+            <div className={`w-full transition-all duration-300 ${anyOpen ? 'max-w-[1400px]' : 'max-w-5xl'}`}>
                 <div className={`bg-base-100 rounded-[2.5rem] shadow-2xl border border-base-200 overflow-hidden flex flex-col ${anyOpen ? 'lg:flex-row' : ''}`}>
 
                     {/* ── COLONNE PRINCIPALE ── */}
@@ -382,7 +382,7 @@ const CalculEcritEngine = ({ onBack }) => {
 
                     {/* ── PANNEAU OUTIL DOCKÉ ── */}
                     {anyOpen && (
-                        <div className="w-full lg:w-[360px] shrink-0 border-t lg:border-t-0 lg:border-l border-base-200/60 bg-base-200/5 p-4 flex flex-col h-[50vh] lg:h-auto justify-stretch">
+                        <div className="w-full lg:w-[480px] shrink-0 border-t lg:border-t-0 lg:border-l border-base-200/60 bg-base-200/5 p-4 flex flex-col h-[50vh] lg:h-auto justify-stretch">
                             {isBrouillonOpen && (
                                 <BrouillonCanvas
                                     isOpen={isBrouillonOpen}

@@ -48,19 +48,7 @@ import NotificationsEnfant from "./pages/enfant/NotificationsEnfant";
 import NotificationsParent from "./pages/parent/NotificationsParent";
 import NotificationsEnseignant from "./pages/enseignant/NotificationsEnseignant";
 
-// Nouveaux templates de démonstration (Plus jolis)
-import TemplateEnfant from "./pages/templates/TemplateEnfant";
-import TemplateEnseignant from "./pages/templates/TemplateEnseignant";
-import TemplateParent from "./pages/templates/TemplateParent";
-import TemplateAdmin from "./pages/templates/TemplateAdmin";
-
 import { CommunicationProvider } from "./contexte/CommunicationContext.jsx";
-
-
-function InscriptionEtLogout() {
-  localStorage.clear()
-  return <Inscription />
-}
 
 function App() {
   return (
@@ -76,14 +64,6 @@ function App() {
 
           {/* Route vers la page de login */}
           <Route path="/login" element={<Login />} />
-
-          {/* 
-              NOUVEAUX TEMPLATES PLUS JOLIS (PREVIEW)
-          */}
-          <Route path="/templates/enfant" element={<TemplateEnfant />} />
-          <Route path="/templates/enseignant" element={<TemplateEnseignant />} />
-          <Route path="/templates/parent" element={<TemplateParent />} />
-          <Route path="/templates/admin" element={<TemplateAdmin />} />
 
           {/* 
               GROUPE PARENT
@@ -155,17 +135,6 @@ function App() {
             <Route path="notifications" element={<NotificationsEnfant />} />
 
           </Route>
-          <Route path="eleves/:id/scores" element={<ScoresEleve />} />
-
-
-          <Route
-              path="/enfant/dashenf"
-              element={
-                <ProtectionRoutes roleAttendu="ENFANT">
-                  <DashEnf />
-                </ProtectionRoutes>
-              }
-          />
 
           {/* Route 404 */}
           <Route path="*" element={<NotFound />}/>

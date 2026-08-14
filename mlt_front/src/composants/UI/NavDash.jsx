@@ -6,14 +6,14 @@ import api from '../../apiDjango/api.jsx';
 import { useCommunication } from '../../contexte/CommunicationContext.jsx';
 
 /**
- * NAVBAR DASHBOARD ENSEIGNANT
- * Gère le thème, les notifications en temps réel et le profil enseignant.
+ * NAVBAR DASHBOARD UNIFIÉE
+ * Gère le thème, les notifications en temps réel et le profil selon le rôle de l'utilisateur.
  */
 const NavbarDash = () => {
     const navigate = useNavigate();
     const { notifs, setNotifs, setUnreadCount, unreadCount } = useCommunication();
     const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
-    const [user, setUser] = useState({ first_name: '', username: '' });
+    const [user, setUser] = useState({ first_name: '', username: '', role: '' });
     const [showNotifPopup, setShowNotifPopup] = useState(false);
     const popupRef = useRef(null);
 
@@ -24,7 +24,7 @@ const NavbarDash = () => {
                 const response = await api.get('/auth/user-profile/');
                 setUser(response.data);
             } catch (err) {
-                console.error("Erreur chargement profil nav enseignant:", err);
+                console.error("Erreur chargement profil nav:", err);
             }
         };
         fetchUserData();
@@ -97,6 +97,11 @@ const NavbarDash = () => {
         }
     };
 
+    // Obtenir le libellé et le lien de profil selon le rôle
+    const userRole = (user.role || '').toUpperCase();
+    const roleLabel = userRole === 'PARENT' ? 'Parent' : userRole === 'ENFANT' ? 'Élève' : 'Enseignant';
+    const profilePath = userRole === 'PARENT' ? '/parent/profil' : userRole === 'ENFANT' ? '/enfant/profil' : '/enseignant/profil';
+
     return (
         <div className="navbar bg-base-100 border-b border-base-300 px-6 py-2 sticky top-0 z-30 shadow-sm">
             <div className="flex-1"></div>
@@ -114,7 +119,7 @@ const NavbarDash = () => {
                 {/* CLOCHE DE NOTIFICATION AVEC POPUP DROPDOWN */}
                 <div className="relative" ref={popupRef}>
                     <button 
-                        id="notif-bell-enseignant"
+                        id="notif-bell"
                         onClick={() => setShowNotifPopup(!showNotifPopup)} 
                         className="btn btn-ghost btn-circle relative transition-colors"
                     >
@@ -198,12 +203,12 @@ const NavbarDash = () => {
                     <div tabIndex={0} role="button" className="flex items-center gap-3 bg-base-200 hover:bg-base-300 transition-all p-1.5 pr-4 rounded-2xl border border-base-300 cursor-pointer">
                         <div className="avatar">
                             <div className="w-9 rounded-xl bg-primary text-white flex items-center justify-center font-black shadow-md uppercase">
-                                {user.first_name ? user.first_name[0] : (user.username ? user.username[0] : 'E')}
+                                {user.first_name ? user.first_name[0] : (user.username ? user.username[0] : 'U')}
                             </div>
                         </div>
                         <div className="hidden sm:flex flex-col items-start leading-tight">
-                            <span className="text-sm font-black text-base-content">{user.first_name || user.username || 'Enseignant'}</span>
-                            <span className="text-[10px] opacity-40 font-bold uppercase tracking-tight">Enseignant</span>
+                            <span className="text-sm font-black text-base-content">{user.first_name || user.username || roleLabel}</span>
+                            <span className="text-[10px] opacity-40 font-bold uppercase tracking-tight">{roleLabel}</span>
                         </div>
                         <ChevronDown size={14} className="opacity-30" />
                     </div>
@@ -212,7 +217,7 @@ const NavbarDash = () => {
                         <li className="menu-title opacity-40 text-[10px] font-black uppercase tracking-widest px-4 py-2">Mon Compte</li>
                         <li>
                             <button 
-                                onClick={() => navigate('/enseignant/profil')}
+                                onClick={() => navigate(profilePath)}
                                 className="flex items-center gap-3 py-3 rounded-xl hover:bg-primary/10 hover:text-primary font-bold w-full text-left"
                             >
                                 <UserCircle size={18} /> Mon Profil
