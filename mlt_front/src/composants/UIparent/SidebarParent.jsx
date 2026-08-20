@@ -24,7 +24,7 @@ const SidebarParent = () => {
 
 
     return (
-        <aside className="w-20 lg:w-72 h-screen flex flex-col sticky top-0 z-50 transition-colors duration-300 bg-base-100 border-r border-base-200 shadow-sm">
+        <aside className="w-20 lg:w-72 h-screen flex flex-col sticky top-0 z-50 transition-colors duration-300 bg-base-100 dark:bg-base-100">
             {/* Logo et Branding */}
             <div className="h-32 flex items-center px-8">
                 <div className="flex items-center gap-4 cursor-pointer group" onClick={() => navigate('/parent/dashboard')}>

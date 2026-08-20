@@ -92,7 +92,7 @@ const NavEnfant = () => {
     };
 
     return (
-        <header className="h-20 bg-base-100 border-b border-base-300 sticky top-0 z-30 px-6 lg:px-12 flex items-center justify-end">
+        <header className="h-20 bg-base-100 dark:bg-base-100 sticky top-0 z-30 px-6 lg:px-12 flex items-center justify-end">
             <div className="flex items-center gap-4">
                 <button
                     onClick={() => setTheme(theme === "light" ? "dark" : "light")}

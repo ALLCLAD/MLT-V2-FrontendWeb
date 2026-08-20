@@ -119,51 +119,50 @@ const EnfantStatsDetail = () => {
     } : null;
 
     return (
-        <div className="bg-base-200/30 min-h-screen py-6 px-2 sm:px-6 lg:px-8 font-sans">
-            <div className="max-w-6xl mx-auto bg-base-100 rounded-[3rem] shadow-2xl border border-base-200 min-h-[80vh] flex flex-col overflow-hidden">
+        <div className="space-y-5 font-sans antialiased">
 
-                {/* HEADER */}
-                {loading ? (
-                    <HeaderSkeleton />
-                ) : (
-                    <div className="p-8 md:p-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-base-200 bg-gradient-to-r from-base-100 to-base-200/20">
-                        <div className="flex items-center gap-6">
-                            <button
-                                onClick={() => navigate(-1)}
-                                className="btn btn-circle btn-outline border-base-300 hover:bg-primary hover:text-white hover:border-primary transition-all shadow-sm"
-                            >
-                                <ArrowLeft size={24} />
-                            </button>
-                            <div>
-                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-black uppercase tracking-wider mb-2">
-                                    <TrendingUp size={14} /> Tableau de bord
-                                </div>
-                                <h1 className="text-3xl md:text-4xl font-black text-base-content tracking-tight uppercase leading-none">
-                                    {data?.enfant || 'Profil Enfant'}
-                                </h1>
-                                <div className="flex items-center gap-2 mt-1">
-                                    <p className="text-primary font-black italic text-sm">Classe : {data?.classe || 'N/A'}</p>
-                                </div>
+            {/* HEADER COMPACT */}
+            {loading ? (
+                <HeaderSkeleton />
+            ) : (
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-base-100 dark:bg-base-100 p-5 rounded-2xl border border-base-300/60 shadow-sm">
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={() => navigate(-1)}
+                            className="btn btn-sm btn-circle btn-ghost border border-base-300/60 hover:bg-primary hover:text-white transition-all shadow-xs shrink-0"
+                        >
+                            <ArrowLeft size={18} />
+                        </button>
+                        <div>
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-extrabold uppercase tracking-wider mb-1">
+                                <TrendingUp size={12} /> Tableau de bord
                             </div>
-                        </div>
-
-                        <div className="flex items-center gap-4">
-                            <div className="hidden md:flex bg-primary/5 p-4 rounded-2xl border border-primary/10 items-center gap-3">
-                                <Award className="text-primary" size={32} />
-                                <div>
-                                    <p className="text-[10px] font-black uppercase opacity-40 leading-none">Statut Global</p>
-                                    <p className="font-black text-lg text-primary uppercase italic">
-                                        {globalStats && parseFloat(globalStats.moyenneGenerale) >= 15 ? 'Petit Génie' :
-                                         globalStats && parseFloat(globalStats.moyenneGenerale) >= 10 ? 'Bon Travail' : 'En Progrès'}
-                                    </p>
-                                </div>
+                            <h1 className="text-xl sm:text-2xl font-black text-base-content tracking-tight uppercase leading-none">
+                                {data?.enfant || 'Profil Enfant'}
+                            </h1>
+                            <div className="flex items-center gap-2 mt-0.5">
+                                <p className="text-primary font-bold italic text-xs">Classe : {data?.classe || 'N/A'}</p>
                             </div>
                         </div>
                     </div>
-                )}
 
-                {/* ZONE DE CONTENU */}
-                <div className="flex-grow p-8 md:p-12 bg-base-100">
+                    <div className="flex items-center gap-3">
+                        <div className="hidden sm:flex bg-primary/10 px-3.5 py-2 rounded-xl border border-primary/20 items-center gap-2.5">
+                            <Award className="text-primary" size={22} />
+                            <div>
+                                <p className="text-[9px] font-black uppercase opacity-50 leading-none">Statut Global</p>
+                                <p className="font-black text-sm text-primary uppercase italic">
+                                    {globalStats && parseFloat(globalStats.moyenneGenerale) >= 15 ? 'Super Champion' :
+                                     globalStats && parseFloat(globalStats.moyenneGenerale) >= 10 ? 'Bonne Progression' : 'Encouragement'}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ZONE DE CONTENU */}
+            <div className="bg-base-100 dark:bg-base-100 p-5 rounded-2xl border border-base-300/60 shadow-sm min-h-[60vh]">
 
                     {loading ? (
                         /* SKELETON COMPLET */
@@ -193,59 +192,58 @@ const EnfantStatsDetail = () => {
                         <div className="space-y-12 animate-in fade-in duration-700">
                             {/* CARTES RÉSUMÉ STATISTIQUES */}
                             {globalStats && (
-                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                                    <div className="bg-base-100 border border-base-200 rounded-[2rem] p-6 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
-                                        <div className="flex items-center gap-4">
-                                            <div className="p-3 bg-primary/10 rounded-2xl text-primary">
-                                                <TrendingUp size={22} />
-                                            </div>
-                                            <div>
-                                                <p className="text-[10px] font-black uppercase opacity-40 tracking-wider">Moyenne</p>
-                                                <p className="text-2xl font-black text-primary italic">{globalStats.moyenneGenerale}<span className="text-xs opacity-40 not-italic">/20</span></p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="bg-base-100 border border-base-200 rounded-[2rem] p-6 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
-                                        <div className="flex items-center gap-4">
-                                            <div className="p-3 bg-green-500/10 rounded-2xl text-green-600">
-                                                <BookOpen size={22} />
-                                            </div>
-                                            <div>
-                                                <p className="text-[10px] font-black uppercase opacity-40 tracking-wider">Exercices</p>
-                                                <p className="text-2xl font-black text-base-content">{globalStats.totalExercices}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="bg-base-100 border border-base-200 rounded-[2rem] p-6 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
-                                        <div className="flex items-center gap-4">
-                                            <div className="p-3 bg-amber-500/10 rounded-2xl text-amber-600">
-                                                <Clock size={22} />
-                                            </div>
-                                            <div>
-                                                <p className="text-[10px] font-black uppercase opacity-40 tracking-wider">Temps moy.</p>
-                                                <p className="text-2xl font-black text-base-content">{globalStats.tempsMoyen}<span className="text-xs opacity-40 ml-0.5">s</span></p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="bg-base-100 border border-base-200 rounded-[2rem] p-6 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
-                                        <div className="flex items-center gap-4">
-                                            <div className="p-3 bg-violet-500/10 rounded-2xl text-violet-600">
-                                                <Target size={22} />
-                                            </div>
-                                            <div>
-                                                <p className="text-[10px] font-black uppercase opacity-40 tracking-wider">Thèmes</p>
-                                                <p className="text-2xl font-black text-base-content">{globalStats.nbThemes}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
+                                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                                     <div className="bg-base-200/50 dark:bg-base-200/40 border border-base-200 dark:border-base-300/40 rounded-xl p-4 hover:scale-[1.01] transition-transform">
+                                         <div className="flex items-center gap-3">
+                                             <div className="p-2.5 bg-primary/10 rounded-xl text-primary">
+                                                 <TrendingUp size={18} />
+                                             </div>
+                                             <div>
+                                                 <p className="text-[9px] font-black uppercase opacity-40 tracking-wider">Moyenne</p>
+                                                 <p className="text-xl font-black text-primary italic">{globalStats.moyenneGenerale}<span className="text-[10px] opacity-40 not-italic">/20</span></p>
+                                             </div>
+                                         </div>
+                                     </div>
+                                     <div className="bg-base-200/50 dark:bg-base-200/40 border border-base-200 dark:border-base-300/40 rounded-xl p-4 hover:scale-[1.01] transition-transform">
+                                         <div className="flex items-center gap-3">
+                                             <div className="p-2.5 bg-emerald-500/10 rounded-xl text-emerald-600">
+                                                 <BookOpen size={18} />
+                                             </div>
+                                             <div>
+                                                 <p className="text-[9px] font-black uppercase opacity-40 tracking-wider">Exercices</p>
+                                                 <p className="text-xl font-black text-base-content">{globalStats.totalExercices}</p>
+                                             </div>
+                                         </div>
+                                     </div>
+                                     <div className="bg-base-200/50 dark:bg-base-200/40 border border-base-200 dark:border-base-300/40 rounded-xl p-4 hover:scale-[1.01] transition-transform">
+                                         <div className="flex items-center gap-3">
+                                             <div className="p-2.5 bg-amber-500/10 rounded-xl text-amber-600">
+                                                 <Clock size={18} />
+                                             </div>
+                                             <div>
+                                                 <p className="text-[9px] font-black uppercase opacity-40 tracking-wider">Temps moy.</p>
+                                                 <p className="text-xl font-black text-base-content">{globalStats.tempsMoyen}<span className="text-[10px] opacity-40 ml-0.5">s</span></p>
+                                             </div>
+                                         </div>
+                                     </div>
+                                     <div className="bg-base-200/50 dark:bg-base-200/40 border border-base-200 dark:border-base-300/40 rounded-xl p-4 hover:scale-[1.01] transition-transform">
+                                         <div className="flex items-center gap-3">
+                                             <div className="p-2.5 bg-violet-500/10 rounded-xl text-violet-600">
+                                                 <Target size={18} />
+                                             </div>
+                                             <div>
+                                                 <p className="text-[9px] font-black uppercase opacity-40 tracking-wider">Thèmes</p>
+                                                 <p className="text-xl font-black text-base-content">{globalStats.nbThemes}</p>
+                                             </div>
+                                         </div>
+                                     </div>
+                                 </div>
+                             )}
 
                             {/* COMPOSANT DE DÉTAILS DE PERFORMANCE */}
                             <PerformanceDetails data={data} />
                         </div>
                     )}
-                </div>
             </div>
         </div>
     );

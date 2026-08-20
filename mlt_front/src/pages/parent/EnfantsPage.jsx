@@ -120,51 +120,50 @@ const EnfantsPage = () => {
     const paginatedEnfants = enfants.slice(startIndex, startIndex + itemsPerPage);
 
     return (
-        <div className="bg-base-200/30 min-h-screen py-6 px-2 sm:px-6 lg:px-8 font-sans">
-            <div className="max-w-6xl mx-auto bg-base-100 rounded-[3rem] shadow-2xl border border-base-200 min-h-[80vh] flex flex-col overflow-hidden">
-
-                {/* HEADER */}
-                <div className="p-8 md:p-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-base-200 bg-gradient-to-r from-base-100 to-base-200/20">
-                    <div>
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-black uppercase tracking-wider mb-3">
-                            <Baby size={14} /> Espace Famille
-                        </div>
-                        <h1 className="text-3xl md:text-4xl font-black text-base-content tracking-tight leading-none">
-                            Suivi de mes Enfants
-                        </h1>
-                        <p className="text-base-content/50 font-semibold italic mt-2">
-                            Gérez les comptes d'accès et suivez l'évolution de vos petits mathématiciens.
-                        </p>
+        <div className="space-y-5 font-sans antialiased">
+            
+            {/* HEADER COMPACT */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-base-100 dark:bg-base-100 p-5 rounded-2xl border border-base-300/60 shadow-sm">
+                <div>
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-extrabold uppercase tracking-wider mb-1">
+                        <Baby size={12} /> Espace Famille
                     </div>
-
-                    <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
-                        {enfants.length > 0 && (
-                            <div className="join bg-base-200 p-1 rounded-2xl flex border border-base-300">
-                                <button
-                                    onClick={() => setViewMode('grid')}
-                                    className={`btn btn-sm join-item border-none rounded-xl ${viewMode === 'grid' ? 'btn-primary shadow-sm' : 'btn-ghost opacity-60'}`}
-                                >
-                                    <LayoutGrid size={16} />
-                                </button>
-                                <button
-                                    onClick={() => setViewMode('list')}
-                                    className={`btn btn-sm join-item border-none rounded-xl ${viewMode === 'list' ? 'btn-primary shadow-sm' : 'btn-ghost opacity-60'}`}
-                                >
-                                    <List size={16} />
-                                </button>
-                            </div>
-                        )}
-                        <button
-                            onClick={() => navigate('/parent/ajouter-enfant')}
-                            className="btn btn-primary rounded-2xl px-6 font-black shadow-lg shadow-primary/20 normal-case hover:scale-105 transition-transform"
-                        >
-                            <Plus size={20} className="mr-1" /> Inscrire un enfant
-                        </button>
-                    </div>
+                    <h1 className="text-xl sm:text-2xl font-black text-base-content tracking-tight uppercase">
+                        Suivi de mes Enfants
+                    </h1>
+                    <p className="text-base-content/50 text-xs font-medium italic mt-0.5">
+                        Gérez les comptes d'accès et suivez l'évolution de vos petits mathématiciens.
+                    </p>
                 </div>
 
-                {/* ZONE DE CONTENU */}
-                <div className="flex-grow p-8 md:p-12 bg-base-100">
+                <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                    {enfants.length > 0 && (
+                        <div className="join bg-base-200 p-0.5 rounded-xl flex border border-base-300/60">
+                            <button
+                                onClick={() => setViewMode('grid')}
+                                className={`btn btn-xs join-item border-none rounded-lg ${viewMode === 'grid' ? 'btn-primary shadow-xs' : 'btn-ghost opacity-60'}`}
+                            >
+                                <LayoutGrid size={14} />
+                            </button>
+                            <button
+                                onClick={() => setViewMode('list')}
+                                className={`btn btn-xs join-item border-none rounded-lg ${viewMode === 'list' ? 'btn-primary shadow-xs' : 'btn-ghost opacity-60'}`}
+                            >
+                                <List size={14} />
+                            </button>
+                        </div>
+                    )}
+                    <button
+                        onClick={() => navigate('/parent/ajouter-enfant')}
+                        className="btn btn-primary btn-sm rounded-xl px-4 font-bold text-xs shadow-sm normal-case hover:scale-[1.01] active:scale-95 transition-transform"
+                    >
+                        <Plus size={16} className="mr-1" /> Inscrire un enfant
+                    </button>
+                </div>
+            </div>
+
+            {/* ZONE DE CONTENU */}
+            <div className="bg-base-100 dark:bg-base-100 p-5 rounded-2xl border border-base-300/60 shadow-sm min-h-[60vh]">
                     {error && (
                         <div className="alert alert-error rounded-2xl font-bold mb-8 shadow-md border-none">
                             <AlertCircle size={20} />
@@ -296,7 +295,6 @@ const EnfantsPage = () => {
                             )}
                         </>
                     )}
-                </div>
             </div>
         </div>
     );

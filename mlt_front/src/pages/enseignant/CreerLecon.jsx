@@ -447,60 +447,61 @@ const CreerLecon = () => {
     };
 
     return (
-        <div className="bg-base-200/30 min-h-screen py-6 px-2 sm:px-6 lg:px-8 font-sans animate-in fade-in duration-300">
-            <div className="max-w-6xl mx-auto bg-base-100 rounded-[3rem] shadow-2xl border border-base-200 min-h-[80vh] flex flex-col overflow-hidden">
-                
-                {/* HEADER */}
-                <div className="p-8 md:p-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-base-200 bg-gradient-to-r from-base-100 to-base-200/20">
-                    <div className="flex items-center gap-6">
-                        <button 
-                            onClick={() => etapeUI === 2 ? setEtapeUI(1) : navigate("/enseignant/lecons")} 
-                            className="btn btn-circle btn-outline border-base-300 hover:bg-primary hover:text-white hover:border-primary transition-all shadow-sm"
-                        >
-                            <ArrowLeft size={24} />
-                        </button>
-                        <div>
-                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-black uppercase tracking-wider mb-2">
-                                <Sparkles size={14} className="animate-pulse" /> IA Mathy
-                            </div>
-                            <h1 className="text-3xl md:text-4xl font-black text-base-content tracking-tight leading-none">
-                                {etapeUI === 2 ? "Validation du cours" : "Nouvelle Leçon"}
-                            </h1>
-                            <p className="text-base-content/50 font-semibold italic mt-2">
-                                {etapeUI === 2 
-                                    ? "Relisez et modifiez le cours avant de générer automatiquement les exercices." 
-                                    : "Renseignez les objectifs et laissez l'IA concevoir le cours et les questions."}
-                            </p>
+        <div className="space-y-5 font-sans antialiased">
+            
+            {/* HEADER COMPACT */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-base-100 dark:bg-base-100 p-5 rounded-2xl border border-base-300/60 shadow-sm">
+                <div className="flex items-center gap-4">
+                    <button 
+                        onClick={() => etapeUI === 2 ? setEtapeUI(1) : navigate("/enseignant/lecons")} 
+                        className="btn btn-sm btn-circle btn-ghost border border-base-300/60 hover:bg-primary hover:text-white transition-all shadow-xs shrink-0"
+                    >
+                        <ArrowLeft size={18} />
+                    </button>
+                    <div>
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-extrabold uppercase tracking-wider mb-1">
+                            <Sparkles size={12} className="animate-pulse" /> IA Mathy
                         </div>
-                    </div>
-
-                    {/* STEP INDICATOR */}
-                    <div className="flex items-center gap-2 text-xs font-black bg-base-200 p-1.5 border border-base-300 rounded-2xl w-full md:w-auto justify-center">
-                        {[["1", "Configuration"], ["2", "Validation"]].map(([num, label], i) => (
-                            <React.Fragment key={num}>
-                                <div className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 ${
-                                    etapeUI === i + 1 
-                                        ? "bg-primary text-primary-content shadow-md" 
-                                        : etapeUI > i + 1 
-                                            ? "bg-success/20 text-success" 
-                                            : "text-base-content/30"
-                                }`}>
-                                    {etapeUI > i + 1 ? <CheckCircle size={12} /> : <span className="bg-base-100/10 text-[10px] w-5 h-5 rounded-full flex items-center justify-center border font-black">{num}</span>}
-                                    <span>{label}</span>
-                                </div>
-                                {i === 0 && <ChevronRight size={14} className="text-base-content/20" />}
-                            </React.Fragment>
-                        ))}
+                        <h1 className="text-xl sm:text-2xl font-black text-base-content tracking-tight uppercase leading-none">
+                            {etapeUI === 2 ? "Validation du cours" : "Nouvelle Leçon"}
+                        </h1>
+                        <p className="text-base-content/50 text-xs font-medium italic mt-0.5">
+                            {etapeUI === 2 
+                                ? "Relisez et modifiez le cours avant de générer automatiquement les exercices." 
+                                : "Renseignez les objectifs et laissez l'IA concevoir le cours et les questions."}
+                        </p>
                     </div>
                 </div>
 
+                {/* STEP INDICATOR */}
+                <div className="flex items-center gap-1 text-xs font-bold bg-base-200 p-1 border border-base-300/60 rounded-xl w-full sm:w-auto justify-center">
+                    {[["1", "Configuration"], ["2", "Validation"]].map(([num, label], i) => (
+                        <React.Fragment key={num}>
+                            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all duration-300 ${
+                                etapeUI === i + 1 
+                                    ? "bg-primary text-primary-content shadow-xs" 
+                                    : etapeUI > i + 1 
+                                        ? "bg-success/20 text-success" 
+                                        : "text-base-content/30"
+                            }`}>
+                                {etapeUI > i + 1 ? <CheckCircle size={12} /> : <span className="bg-base-100/10 text-[9px] w-4 h-4 rounded-full flex items-center justify-center border font-black">{num}</span>}
+                                <span className="text-xs">{label}</span>
+                            </div>
+                            {i === 0 && <ChevronRight size={14} className="text-base-content/20" />}
+                        </React.Fragment>
+                    ))}
+                </div>
+            </div>
+
+            {/* CONTENU */}
+            <div className="bg-base-100 dark:bg-base-100 rounded-2xl border border-base-300/60 shadow-sm overflow-hidden min-h-[60vh]">
                 {/* ERROR NOTIFICATIONS */}
                 {error && (
-                    <div className="mx-8 md:mx-12 mt-6 flex items-center gap-3 bg-error/10 border border-error/20 rounded-2xl p-5 animate-in slide-in-from-top duration-300">
-                        <AlertCircle size={20} className="text-error shrink-0" />
-                        <span className="font-bold text-error text-sm flex-1">{error}</span>
-                        <button onClick={() => setError(null)} className="btn btn-ghost btn-circle btn-sm text-error/50 hover:text-error hover:bg-error/10">
-                            <X size={16} />
+                    <div className="mx-5 mt-5 flex items-center gap-3 bg-error/10 border border-error/20 rounded-xl p-3.5 animate-in slide-in-from-top duration-300">
+                        <AlertCircle size={18} className="text-error shrink-0" />
+                        <span className="font-bold text-error text-xs flex-1">{error}</span>
+                        <button onClick={() => setError(null)} className="btn btn-ghost btn-circle btn-xs text-error/50 hover:text-error hover:bg-error/10">
+                            <X size={14} />
                         </button>
                     </div>
                 )}

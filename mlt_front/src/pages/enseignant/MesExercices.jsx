@@ -60,41 +60,40 @@ const MesExercices = () => {
     useEffect(() => { fetchExercices(); }, [id]);
 
     return (
-        <div className="bg-base-200/30 min-h-screen py-6 px-2 sm:px-6 lg:px-8 font-sans animate-in fade-in duration-300">
-            <div className="max-w-6xl mx-auto bg-base-100 rounded-[3rem] shadow-2xl border border-base-200 min-h-[80vh] flex flex-col overflow-hidden">
-                
-                {/* Header interne */}
-                <div className="p-8 md:p-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-base-200 bg-gradient-to-r from-base-100 to-base-200/20">
-                    <div className="flex items-center gap-6">
-                        <button 
-                            onClick={() => navigate(`/enseignant/lecons/${id}`)}
-                            className="btn btn-circle btn-outline border-base-300 hover:bg-primary hover:text-white hover:border-primary transition-all shadow-sm shrink-0"
-                        >
-                            <ArrowLeft size={24} />
-                        </button>
-                        <div>
-                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-black uppercase tracking-wider mb-2">
-                                <ClipboardList size={14} /> Évaluations
-                            </div>
-                            <h1 className="text-3xl md:text-4xl font-black text-base-content tracking-tight leading-none">
-                                Exercices d'évaluation
-                            </h1>
-                            <p className="text-base-content/50 font-semibold italic mt-2">
-                                {lecon ? `Cours : ${lecon.titre}` : 'Gestion des exercices du cours'}
-                            </p>
-                        </div>
-                    </div>
-
-                    <button
-                        onClick={() => navigate(`/enseignant/lecons/${id}/ajouter-exercice`)}
-                        className="btn btn-primary rounded-2xl px-6 font-black shadow-lg shadow-primary/20 normal-case hover:scale-105 transition-transform"
+        <div className="space-y-5 font-sans antialiased">
+            
+            {/* Header interne */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-base-100 dark:bg-base-100 p-5 rounded-2xl border border-base-300/60 shadow-sm">
+                <div className="flex items-center gap-4">
+                    <button 
+                        onClick={() => navigate(`/enseignant/lecons/${id}`)}
+                        className="btn btn-sm btn-circle btn-ghost border border-base-300/60 hover:bg-primary hover:text-white transition-all shadow-xs shrink-0"
                     >
-                        <Plus size={20} className="mr-1" /> Ajouter un exercice
+                        <ArrowLeft size={18} />
                     </button>
+                    <div>
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-extrabold uppercase tracking-wider mb-1">
+                            <ClipboardList size={12} /> Évaluations
+                        </div>
+                        <h1 className="text-xl sm:text-2xl font-black text-base-content tracking-tight uppercase">
+                            Exercices d'évaluation
+                        </h1>
+                        <p className="text-base-content/50 text-xs font-medium italic mt-0.5">
+                            {lecon ? `Cours : ${lecon.titre}` : 'Gestion des exercices du cours'}
+                        </p>
+                    </div>
                 </div>
 
-                {/* ZONE DE CONTENU */}
-                <div className="flex-grow p-8 md:p-12 bg-base-100">
+                <button
+                    onClick={() => navigate(`/enseignant/lecons/${id}/ajouter-exercice`)}
+                    className="btn btn-primary btn-sm rounded-xl px-4 font-bold text-xs shadow-sm normal-case hover:scale-[1.01] active:scale-95 transition-transform"
+                >
+                    <Plus size={16} className="mr-1" /> Ajouter un exercice
+                </button>
+            </div>
+
+            {/* ZONE DE CONTENU */}
+            <div className="bg-base-100 dark:bg-base-100 p-5 rounded-2xl border border-base-300/60 shadow-sm min-h-[60vh]">
                     {error && (
                         <div className="alert alert-error rounded-2xl font-bold mb-8 shadow-md border-none">
                             <AlertCircle className="shrink-0" size={20} />
@@ -153,7 +152,6 @@ const MesExercices = () => {
                             ))}
                         </div>
                     )}
-                </div>
             </div>
         </div>
     );

@@ -93,140 +93,139 @@ const AjouterEleve = () => {
     };
 
     return (
-        <div className="bg-base-200/30 min-h-screen py-6 px-2 sm:px-6 lg:px-8 font-sans">
-            <div className="max-w-6xl mx-auto bg-base-100 rounded-[3rem] shadow-2xl border border-base-200 min-h-[80vh] flex flex-col overflow-hidden animate-in fade-in duration-300">
-                
-                {/* HEADER */}
-                <div className="p-8 md:p-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-base-200 bg-gradient-to-r from-base-100 to-base-200/20">
-                    <div className="flex items-center gap-6">
-                        <button 
-                            onClick={() => navigate('/enseignant/eleves')} 
-                            className="btn btn-circle btn-outline border-base-300 hover:bg-primary hover:text-white hover:border-primary transition-all shadow-sm"
-                        >
-                            <ArrowLeft size={24} />
-                        </button>
-                        <div>
-                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-black uppercase tracking-wider mb-2">
-                                <UserPlus size={14} /> Inscriptions
-                            </div>
-                            <h1 className="text-3xl md:text-4xl font-black text-base-content tracking-tight leading-none">
-                                Ajouter un Élève
-                            </h1>
-                            <p className="text-base-content/50 font-semibold italic mt-2">
-                                {classeEnseignant
-                                    ? `Inscrivez des élèves de la classe ${classeEnseignant}`
-                                    : 'Chargement des informations de classe...'}
-                            </p>
+        <div className="space-y-5 font-sans antialiased">
+            
+            {/* HEADER COMPACT */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-base-100 dark:bg-base-100 p-5 rounded-2xl border border-base-300/60 shadow-sm">
+                <div className="flex items-center gap-4">
+                    <button 
+                        onClick={() => navigate('/enseignant/eleves')} 
+                        className="btn btn-sm btn-circle btn-ghost border border-base-300/60 hover:bg-primary hover:text-white transition-all shadow-xs shrink-0"
+                    >
+                        <ArrowLeft size={18} />
+                    </button>
+                    <div>
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-extrabold uppercase tracking-wider mb-1">
+                            <UserPlus size={12} /> Inscriptions
                         </div>
+                        <h1 className="text-xl sm:text-2xl font-black text-base-content tracking-tight uppercase leading-none">
+                            Ajouter un Élève
+                        </h1>
+                        <p className="text-base-content/50 text-xs font-medium italic mt-0.5">
+                            {classeEnseignant
+                                ? `Inscrivez des élèves de la classe ${classeEnseignant}`
+                                : 'Chargement des informations de classe...'}
+                        </p>
                     </div>
                 </div>
+            </div>
 
-                <div className="flex-grow p-8 md:p-12 bg-base-100">
-                    <div className="max-w-3xl mx-auto space-y-8">
-                        
-                        {/* Barre de recherche */}
-                        <div className="relative">
-                            <Search className="absolute left-6 top-1/2 -translate-y-1/2 opacity-30 text-base-content" size={24} />
-                            <input
-                                type="text"
-                                value={recherche}
-                                onChange={handleRecherche}
-                                placeholder={`Rechercher un élève de la classe ${classeEnseignant || '...'}...`}
-                                className="input w-full pl-16 rounded-2xl bg-base-200/50 border border-base-300 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10 font-bold h-16 text-lg transition-all"
-                            />
+            {/* ZONE DE CONTENU */}
+            <div className="bg-base-100 dark:bg-base-100 p-5 md:p-8 rounded-2xl border border-base-300/60 shadow-sm min-h-[60vh]">
+                <div className="max-w-3xl mx-auto space-y-6">
+                    
+                    {/* Barre de recherche */}
+                    <div className="relative">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 opacity-30 text-base-content" size={18} />
+                        <input
+                            type="text"
+                            value={recherche}
+                            onChange={handleRecherche}
+                            placeholder={`Rechercher un élève de la classe ${classeEnseignant || '...'}...`}
+                            className="input w-full pl-12 rounded-xl bg-base-200/50 border border-base-300/60 focus:border-primary focus:outline-none font-bold h-12 text-sm transition-all"
+                        />
+                    </div>
+
+                    {/* Notifications */}
+                    {success && (
+                        <div className="alert bg-success/10 border-none rounded-xl text-success font-bold text-xs p-3 flex gap-2.5 shadow-xs">
+                            <CheckCircle size={18} className="shrink-0" />
+                            <span>{success}</span>
                         </div>
+                    )}
 
-                        {/* Notifications */}
-                        {success && (
-                            <div className="alert bg-success/10 border-none rounded-2xl text-success font-black p-4 flex gap-3 shadow-sm animate-in fade-in duration-300">
-                                <CheckCircle size={22} className="shrink-0" />
-                                <span>{success}</span>
+                    {error && (
+                        <div className="alert bg-error/10 border-none rounded-xl text-error font-bold text-xs p-3 flex gap-2.5 shadow-xs">
+                            <AlertCircle size={18} className="shrink-0" />
+                            <span>{error}</span>
+                        </div>
+                    )}
+
+                    {/* Résultats */}
+                    <div className="space-y-3">
+                        {loading ? (
+                            <div className="space-y-3">
+                                {[...Array(3)].map((_, i) => (
+                                    <ResultCardSkeleton key={i} />
+                                ))}
                             </div>
-                        )}
-
-                        {error && (
-                            <div className="alert bg-error/10 border-none rounded-2xl text-error font-black p-4 flex gap-3 shadow-sm animate-in fade-in duration-300">
-                                <AlertCircle size={22} className="shrink-0" />
-                                <span>{error}</span>
-                            </div>
-                        )}
-
-                        {/* Résultats */}
-                        <div className="space-y-4">
-                            {loading ? (
-                                <div className="space-y-4">
-                                    {[...Array(3)].map((_, i) => (
-                                        <ResultCardSkeleton key={i} />
-                                    ))}
-                                </div>
-                            ) : resultats.length > 0 ? (
-                                <>
-                                    <p className="text-xs font-black uppercase tracking-widest opacity-40 px-2">
-                                        {resultats.length} élève(s) disponible(s) en {classeEnseignant}
-                                    </p>
-                                    <div className="grid gap-4 animate-in fade-in duration-500">
-                                        {resultats.map(eleve => (
-                                            <div
-                                                key={eleve.id}
-                                                className="flex flex-col sm:flex-row items-center justify-between p-6 bg-base-100 border border-base-200 rounded-[2rem] hover:shadow-xl hover:border-primary/20 shadow-md gap-6 transition-all duration-300 group"
-                                            >
-                                                <div className="flex items-center gap-5 w-full">
-                                                    <div className="w-14 h-14 bg-gradient-to-tr from-primary/80 to-primary text-primary-content rounded-[1.2rem] flex items-center justify-center text-2xl font-black shadow-lg shadow-primary/20 shrink-0 transform group-hover:scale-105 transition-transform duration-300">
-                                                        {eleve.prenom ? eleve.prenom[0].toUpperCase() : '?'}
-                                                    </div>
-                                                    <div className="min-w-0 flex-1">
-                                                        <p className="font-black text-xl text-base-content truncate group-hover:text-primary transition-colors">
-                                                            {eleve.prenom} {eleve.nom}
-                                                        </p>
-                                                        <div className="flex flex-wrap items-center gap-2 mt-2">
-                                                            <span className="text-[10px] font-black uppercase opacity-40 tracking-wider flex items-center gap-1">
-                                                                <User size={12} /> {eleve.username}
-                                                            </span>
-                                                            <div className="badge badge-sm bg-primary/10 border-none text-primary font-black px-2 py-2 rounded-lg flex items-center gap-1">
-                                                                <GraduationCap size={12} /> {eleve.classe}
-                                                            </div>
+                        ) : resultats.length > 0 ? (
+                            <>
+                                <p className="text-[10px] font-black uppercase tracking-widest opacity-40 px-1">
+                                    {resultats.length} élève(s) disponible(s) en {classeEnseignant}
+                                </p>
+                                <div className="grid gap-3">
+                                    {resultats.map(eleve => (
+                                        <div
+                                            key={eleve.id}
+                                            className="flex flex-col sm:flex-row items-center justify-between p-4 bg-base-200/40 dark:bg-base-200/30 border border-base-200 dark:border-base-300/40 rounded-xl hover:scale-[1.005] shadow-xs gap-4 transition-all duration-300 group"
+                                        >
+                                            <div className="flex items-center gap-3.5 w-full">
+                                                <div className="w-10 h-10 bg-gradient-to-tr from-primary/80 to-primary text-primary-content rounded-xl flex items-center justify-center text-lg font-black shadow-xs shrink-0">
+                                                    {eleve.prenom ? eleve.prenom[0].toUpperCase() : '?'}
+                                                </div>
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="font-black text-sm text-base-content truncate group-hover:text-primary transition-colors">
+                                                        {eleve.prenom} {eleve.nom}
+                                                    </p>
+                                                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                                                        <span className="text-[10px] font-black uppercase opacity-40 tracking-wider flex items-center gap-1">
+                                                            <User size={10} /> {eleve.username}
+                                                        </span>
+                                                        <div className="badge badge-sm bg-primary/10 border-none text-primary font-bold px-2 py-1 rounded-md text-[10px] flex items-center gap-1">
+                                                            <GraduationCap size={10} /> {eleve.classe}
                                                         </div>
                                                     </div>
                                                 </div>
-
-                                                <button
-                                                    onClick={() => handleAjouter(eleve)}
-                                                    disabled={loadingAjout === eleve.id}
-                                                    className="btn btn-primary rounded-2xl normal-case font-black shadow-lg shadow-primary/20 px-6 h-12 w-full sm:w-auto hover:scale-105 transition-transform shrink-0"
-                                                >
-                                                    {loadingAjout === eleve.id ? (
-                                                        <Loader2 size={20} className="animate-spin" />
-                                                    ) : (
-                                                        <span className="flex items-center gap-1">
-                                                            <UserPlus size={18} /> Ajouter
-                                                        </span>
-                                                    )}
-                                                </button>
                                             </div>
-                                        ))}
-                                    </div>
-                                </>
-                            ) : (
-                                <div className="text-center py-20 bg-base-100 rounded-[3rem] border border-base-200 shadow-sm animate-in fade-in duration-500">
-                                    <div className="bg-gradient-to-tr from-primary/10 to-primary/5 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
-                                        <Search size={36} className="text-primary animate-pulse" />
-                                    </div>
-                                    <p className="text-2xl font-black text-base-content">Aucun élève disponible</p>
-                                    <p className="text-base-content/60 max-w-sm mx-auto font-semibold mt-2 text-sm leading-relaxed">
-                                        Tous les élèves de la classe <span className="text-primary font-black italic">{classeEnseignant}</span> sont déjà inscrits ou aucun élève ne correspond à votre recherche.
-                                    </p>
-                                </div>
-                            )}
-                        </div>
 
-                        <div className="pt-8">
-                            <button
-                                onClick={() => navigate('/enseignant/eleves')}
-                                className="btn btn-ghost w-full rounded-2xl font-black opacity-50 hover:opacity-100 h-14"
-                            >
-                                ← Retour à la liste de mes élèves
-                            </button>
-                        </div>
+                                            <button
+                                                onClick={() => handleAjouter(eleve)}
+                                                disabled={loadingAjout === eleve.id}
+                                                className="btn btn-primary btn-sm rounded-xl normal-case font-bold shadow-xs px-4 w-full sm:w-auto hover:scale-[1.01] active:scale-95 transition-transform shrink-0"
+                                            >
+                                                {loadingAjout === eleve.id ? (
+                                                    <Loader2 size={16} className="animate-spin" />
+                                                ) : (
+                                                    <span className="flex items-center gap-1 text-xs">
+                                                        <UserPlus size={15} /> Ajouter
+                                                    </span>
+                                                )}
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </>
+                        ) : (
+                            <div className="text-center py-12 bg-base-200/30 dark:bg-base-200/20 rounded-2xl border border-base-200 dark:border-base-300/40">
+                                <div className="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <Search size={24} className="text-primary animate-pulse" />
+                                </div>
+                                <p className="text-lg font-black text-base-content">Aucun élève disponible</p>
+                                <p className="text-base-content/60 max-w-sm mx-auto font-medium mt-1 text-xs leading-relaxed">
+                                    Tous les élèves de la classe <span className="text-primary font-bold italic">{classeEnseignant}</span> sont déjà inscrits ou aucun élève ne correspond à votre recherche.
+                                </p>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="pt-4 text-center">
+                        <button
+                            onClick={() => navigate('/enseignant/eleves')}
+                            className="btn btn-ghost btn-sm font-bold text-xs opacity-60 hover:opacity-100"
+                        >
+                            ← Retour à la liste de mes élèves
+                        </button>
                     </div>
                 </div>
             </div>

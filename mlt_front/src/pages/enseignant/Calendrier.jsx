@@ -286,48 +286,50 @@ const Calendrier = () => {
     const evenementsAujourdhui = getEvenementsJour(today);
 
     return (
-        <div className="min-h-screen py-6 px-4 sm:px-6 lg:px-8 font-sans bg-base-200/20">
-            
+        <div className="space-y-5 font-sans antialiased">
+
             {/* TOAST */}
             {toast && (
-                <div className={`fixed bottom-6 right-6 z-[200] px-6 py-4 rounded-3xl shadow-2xl flex items-center gap-3 font-bold text-sm animate-in slide-in-from-bottom duration-300 ${
+                <div className={`fixed bottom-6 right-6 z-[200] px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3 font-bold text-sm animate-in slide-in-from-bottom duration-300 ${
                     toast.type === 'error'
                         ? 'bg-error text-error-content'
                         : 'bg-success text-success-content'
                 }`}>
-                    {toast.type === 'error' ? <AlertTriangle size={18} /> : <CheckCircle2 size={18} />}
+                    {toast.type === 'error' ? <AlertTriangle size={16} /> : <CheckCircle2 size={16} />}
                     {toast.msg}
                 </div>
             )}
 
-            {/* GRAND CONTENEUR UNIQUE PROFESSIONNEL */}
-            <div className="max-w-7xl mx-auto bg-base-100 rounded-[3.5rem] shadow-2xl border border-base-200 overflow-hidden flex flex-col min-h-[85vh]">
-                
-                {/* 1. HEADER DU CONTENEUR */}
-                <div className="p-8 md:p-10 border-b border-base-200 bg-gradient-to-r from-base-100 via-base-200/10 to-base-200/30 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                    <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-3xl bg-primary/10 text-primary flex items-center justify-center shadow-inner">
-                            <Calendar size={28} />
-                        </div>
-                        <div>
-                            <h1 className="text-3xl md:text-4xl font-black tracking-tight text-base-content">Planification</h1>
-                            <p className="opacity-60 text-sm font-semibold mt-1">
-                                Organisez votre emploi du temps et automatisez la diffusion de vos cours.
-                            </p>
-                        </div>
+            {/* HEADER COMPACT */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-base-100 dark:bg-base-100 p-5 rounded-2xl border border-base-300/60 shadow-sm">
+                <div className="flex items-center gap-4">
+                    <div className="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center shadow-xs shrink-0">
+                        <Calendar size={22} />
                     </div>
-                    
-                    <button
-                        onClick={() => { setJourSelectionne(today); setNouvelEvenement({ titre: '', lecon: '', type_evenement: '', heure: '', publier_automatiquement: false }); setShowModal(true); }}
-                        className="btn btn-primary rounded-2xl px-6 py-3 h-auto shadow-lg shadow-primary/20 normal-case font-black group gap-2 text-white hover:scale-[1.02] transition-all"
-                    >
-                        <Plus size={20} className="group-hover:rotate-90 transition-transform" />
-                        Nouvel événement
-                    </button>
+                    <div>
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-extrabold uppercase tracking-wider mb-1">
+                            <Calendar size={12} /> Calendrier
+                        </div>
+                        <h1 className="text-xl sm:text-2xl font-black text-base-content tracking-tight uppercase leading-none">
+                            Planification
+                        </h1>
+                        <p className="text-base-content/50 text-xs font-medium italic mt-0.5">
+                            Organisez votre emploi du temps et automatisez la diffusion de vos cours.
+                        </p>
+                    </div>
                 </div>
+                <button
+                    onClick={() => { setJourSelectionne(today); setNouvelEvenement({ titre: '', lecon: '', type_evenement: '', heure: '', publier_automatiquement: false }); setShowModal(true); }}
+                    className="btn btn-primary btn-sm rounded-xl px-5 font-bold gap-2 shadow-xs hover:scale-[1.01] active:scale-95 transition-all normal-case text-xs"
+                >
+                    <Plus size={16} className="group-hover:rotate-90 transition-transform" />
+                    Nouvel événement
+                </button>
+            </div>
 
-                {/* 2. SPLIT LAYOUT : CALENDRIER + SIDEBAR DANS LE CONTENEUR */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 flex-1">
+            {/* CONTENU : CALENDRIER + SIDEBAR */}
+            <div className="bg-base-100 dark:bg-base-100 rounded-2xl border border-base-300/60 shadow-sm overflow-hidden">
+                <div className="grid grid-cols-1 lg:grid-cols-12">
                     
                     {/* COLONNE CALENDRIER (9/12) */}
                     <div className="lg:col-span-8 p-6 md:p-8 border-r border-base-200 flex flex-col gap-6">

@@ -226,7 +226,7 @@ const BaseMessagerie = ({ role, title, subtitle, icon: Icon, inputPlaceholder, e
     };
 
     return (
-        <div className="flex h-[calc(100vh-120px)] bg-base-200 rounded-2xl border border-base-300 shadow-xl overflow-hidden font-sans antialiased transition-colors duration-300">
+        <div className="flex h-full min-h-[calc(100vh-140px)] bg-base-200/50 dark:bg-base-200 rounded-2xl border border-base-300/60 shadow-md overflow-hidden font-sans antialiased transition-colors duration-300">
 
             {/* Sidebar Gauche */}
             <div className={`w-full md:w-96 border-r border-base-300 flex flex-col bg-base-100 ${selectedRoom ? 'hidden md:flex' : 'flex'}`}>

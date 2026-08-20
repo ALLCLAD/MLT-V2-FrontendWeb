@@ -108,168 +108,166 @@ const DetailLecon = () => {
     };
 
     return (
-        <div className="bg-base-200/30 min-h-screen py-6 px-2 sm:px-6 lg:px-8 font-sans">
-            <div className="max-w-6xl mx-auto bg-base-100 rounded-[3rem] shadow-2xl border border-base-200 min-h-[80vh] flex flex-col overflow-hidden">
-                
-                {/* HEADER */}
-                {loading ? (
-                    <HeaderSkeleton />
-                ) : (
-                    <div className="p-8 md:p-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-base-200 bg-gradient-to-r from-base-100 to-base-200/20">
-                        <div className="flex items-center gap-6">
-                            <button 
-                                onClick={() => navigate('/enseignant/lecons')}
-                                className="btn btn-circle btn-outline border-base-300 hover:bg-primary hover:text-white hover:border-primary transition-all shadow-sm shrink-0"
-                            >
-                                <ArrowLeft size={24} />
-                            </button>
-                            <div>
-                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-black uppercase tracking-wider mb-2">
-                                    <BookOpen size={14} /> Fiche de Cours
-                                </div>
-                                <h1 className="text-3xl md:text-4xl font-black text-base-content tracking-tight leading-none">
-                                    {lecon?.titre}
-                                </h1>
-                                <p className="text-base-content/50 font-semibold italic mt-2">
-                                    Classe : {lecon?.classe} • Thème : {lecon?.theme}
-                                </p>
+        <div className="space-y-5 font-sans antialiased">
+            
+            {/* HEADER COMPACT */}
+            {loading ? (
+                <HeaderSkeleton />
+            ) : (
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-base-100 dark:bg-base-100 p-5 rounded-2xl border border-base-300/60 shadow-sm">
+                    <div className="flex items-center gap-4">
+                        <button 
+                            onClick={() => navigate('/enseignant/lecons')}
+                            className="btn btn-sm btn-circle btn-ghost border border-base-300/60 hover:bg-primary hover:text-white transition-all shadow-xs shrink-0"
+                        >
+                            <ArrowLeft size={18} />
+                        </button>
+                        <div>
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-extrabold uppercase tracking-wider mb-1">
+                                <BookOpen size={12} /> Fiche de Cours
                             </div>
+                            <h1 className="text-xl sm:text-2xl font-black text-base-content tracking-tight uppercase leading-none">
+                                {lecon?.titre}
+                            </h1>
+                            <p className="text-base-content/50 text-xs font-medium italic mt-0.5">
+                                Classe : {lecon?.classe} • Thème : {lecon?.theme}
+                            </p>
                         </div>
-
-                        {lecon && (
-                            <div className="flex items-center gap-3 w-full md:w-auto justify-end">
-                                {/* Bouton de téléchargement */}
-                                <div className="relative">
-                                    <button
-                                        onClick={() => setShowDownloadMenu(prev => !prev)}
-                                        disabled={loadingDownload}
-                                        className="btn btn-ghost rounded-2xl font-black gap-2 border-2 border-base-200 hover:border-primary/30 normal-case"
-                                    >
-                                        {loadingDownload ? <Loader2 className="animate-spin" size={18} /> : <Download size={18} />}
-                                        Télécharger
-                                        <ChevronDown size={14} />
-                                    </button>
-                                    {showDownloadMenu && (
-                                        <div className="absolute right-0 top-full mt-2 bg-base-100 border-2 border-base-200 rounded-2xl shadow-2xl shadow-base-300/30 z-50 overflow-hidden min-w-[190px] animate-in zoom-in-95 duration-200">
-                                            <button onClick={() => handleDownload("pdf")}
-                                                className="w-full flex items-center gap-3 px-5 py-4 hover:bg-base-200/60 font-bold text-sm transition-colors text-left">
-                                                <FileText size={16} className="text-error" /> Exporter en PDF
-                                            </button>
-                                            <button onClick={() => handleDownload("docx")}
-                                                className="w-full flex items-center gap-3 px-5 py-4 hover:bg-base-200/60 font-bold text-sm transition-colors border-t border-base-200 text-left">
-                                                <FileText size={16} className="text-blue-500" /> Exporter en Word
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Bouton publication */}
-                                <button
-                                    onClick={handleToggleStatut}
-                                    disabled={loadingStatut}
-                                    className={`btn rounded-2xl font-black gap-2 normal-case ${
-                                        lecon.statut === "publie" 
-                                            ? "btn-ghost text-warning border border-warning/20 hover:bg-warning/10" 
-                                            : "btn-primary shadow-lg shadow-primary/20 hover:scale-105 transition-transform"
-                                    }`}
-                                >
-                                    {loadingStatut ? (
-                                        <Loader2 className="animate-spin" size={18} />
-                                    ) : lecon.statut === "publie" ? (
-                                        <><EyeOff size={18} /> Retirer de la classe</>
-                                    ) : (
-                                        <><Globe size={18} /> Publier la leçon</>
-                                    )}
-                                </button>
-                            </div>
-                        )}
                     </div>
-                )}
 
-                {/* ZONE DE CONTENU */}
-                <div className="flex-grow p-8 md:p-12 bg-base-100">
-                    {error && (
-                        <div className="alert alert-error rounded-2xl font-bold mb-8 shadow-md border-none">
-                            <AlertCircle size={20} />
-                            <span>{error}</span>
-                        </div>
-                    )}
-
-                    {loading ? (
-                        <DetailLeconSkeleton />
-                    ) : (
-                        <div className="animate-in fade-in slide-in-from-bottom duration-500 space-y-12">
-                            {/* Alert Succès */}
-                            {successMsg && (
-                                <div className="alert bg-success/10 border-none rounded-2xl text-success font-black p-4 flex gap-3 shadow-sm animate-in fade-in duration-300">
-                                    <Award size={22} className="shrink-0" />
-                                    <span>{successMsg}</span>
-                                </div>
-                            )}
-
-                            {/* Cartes d'infos */}
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                <div className="bg-base-100 p-8 rounded-[2rem] border border-base-200 shadow-sm hover:shadow-md transition-all duration-300">
-                                    <p className="text-[10px] font-black uppercase opacity-40 tracking-wider mb-3">Objectif pédagogique</p>
-                                    <p className="font-semibold text-base leading-relaxed text-base-content/85">{lecon.description || "Aucune description de cours."}</p>
-                                </div>
-
-                                <div className="bg-base-100 p-8 rounded-[2rem] border border-base-200 shadow-sm hover:shadow-md transition-all duration-300 flex items-center justify-between">
-                                    <div>
-                                        <p className="text-[10px] font-black uppercase opacity-40 tracking-wider mb-2">Durée estimée</p>
-                                        <p className="font-black text-3xl text-primary">{lecon.duree || "45 min"}</p>
-                                    </div>
-                                    <div className="p-4 bg-primary/10 rounded-2xl text-primary">
-                                        <Clock size={28} />
-                                    </div>
-                                </div>
-
-                                <div className="bg-base-100 p-8 rounded-[2rem] border border-base-200 shadow-sm hover:shadow-md transition-all duration-300 flex items-center justify-between">
-                                    <div>
-                                        <p className="text-[10px] font-black uppercase opacity-40 tracking-wider mb-2">Niveau ciblé</p>
-                                        <p className="font-black text-3xl text-primary">{lecon.classe}</p>
-                                    </div>
-                                    <div className="p-4 bg-primary/10 rounded-2xl text-primary">
-                                        <GraduationCap size={28} />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Zone de texte du contenu */}
-                            <div className="bg-base-100 p-8 md:p-12 rounded-[2.5rem] border border-base-200 shadow-lg shadow-base-200/50">
-                                <div className="flex items-center gap-4 mb-8">
-                                    <div className="p-3.5 bg-primary/10 rounded-2xl text-primary">
-                                        <BookOpen size={24} />
-                                    </div>
-                                    <h2 className="text-2xl font-black uppercase tracking-tighter">
-                                        Contenu de la leçon
-                                    </h2>
-                                </div>
-
-                                <div className="prose prose-sm max-w-none text-base-content opacity-90 font-medium leading-relaxed prose-headings:font-black prose-p:leading-relaxed">
-                                    {lecon.contenu ? (
-                                        <ReactMarkdown>{lecon.contenu}</ReactMarkdown>
-                                    ) : (
-                                        <p className="opacity-40 italic text-center py-12">
-                                            Le contenu de cette leçon n'a pas encore été rédigé.
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* BOUTONS BAS DE PAGE */}
-                            <div className="flex justify-end pt-4 border-t border-base-200">
+                    {lecon && (
+                        <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+                            {/* Bouton de téléchargement */}
+                            <div className="relative">
                                 <button
-                                    onClick={() => navigate(`/enseignant/lecons/${id}/exercices`)}
-                                    className="btn btn-primary rounded-2xl px-10 h-16 shadow-xl shadow-primary/20 normal-case font-black gap-3 hover:scale-105 transition-all text-lg"
+                                    onClick={() => setShowDownloadMenu(prev => !prev)}
+                                    disabled={loadingDownload}
+                                    className="btn btn-xs sm:btn-sm btn-ghost rounded-xl font-bold gap-1.5 border border-base-300/60 hover:border-primary/30"
                                 >
-                                    <ClipboardList size={22} />
-                                    Voir les exercices associés
+                                    {loadingDownload ? <Loader2 className="animate-spin" size={14} /> : <Download size={14} />}
+                                    Télécharger
+                                    <ChevronDown size={12} />
                                 </button>
+                                {showDownloadMenu && (
+                                    <div className="absolute right-0 top-full mt-2 bg-base-100 dark:bg-base-100 border border-base-300/60 rounded-xl shadow-md z-50 overflow-hidden min-w-[170px] animate-in zoom-in-95 duration-200">
+                                        <button onClick={() => handleDownload("pdf")}
+                                            className="w-full flex items-center gap-2.5 px-4 py-3 hover:bg-base-200/60 font-bold text-xs transition-colors text-left">
+                                            <FileText size={14} className="text-error" /> Exporter en PDF
+                                        </button>
+                                        <button onClick={() => handleDownload("docx")}
+                                            className="w-full flex items-center gap-2.5 px-4 py-3 hover:bg-base-200/60 font-bold text-xs transition-colors border-t border-base-200 dark:border-base-300/40 text-left">
+                                            <FileText size={14} className="text-blue-500" /> Exporter en Word
+                                        </button>
+                                    </div>
+                                )}
                             </div>
+
+                            {/* Bouton publication */}
+                            <button
+                                onClick={handleToggleStatut}
+                                disabled={loadingStatut}
+                                className={`btn btn-xs sm:btn-sm rounded-xl font-bold gap-1.5 ${
+                                    lecon.statut === "publie" 
+                                        ? "btn-ghost text-warning border border-warning/20 hover:bg-warning/10" 
+                                        : "btn-primary shadow-xs hover:scale-[1.01] active:scale-95 transition-transform"
+                                }`}
+                            >
+                                {loadingStatut ? (
+                                    <Loader2 className="animate-spin" size={14} />
+                                ) : lecon.statut === "publie" ? (
+                                    <><EyeOff size={14} /> Retirer</>
+                                ) : (
+                                    <><Globe size={14} /> Publier</>
+                                )}
+                            </button>
                         </div>
                     )}
                 </div>
+            )}
+
+            {/* ZONE DE CONTENU */}
+            <div className="bg-base-100 dark:bg-base-100 p-5 md:p-6 rounded-2xl border border-base-300/60 shadow-sm min-h-[60vh]">
+                {error && (
+                    <div className="alert alert-error rounded-xl font-bold text-xs p-3 mb-4 shadow-xs">
+                        <AlertCircle size={18} />
+                        <span>{error}</span>
+                    </div>
+                )}
+
+                {loading ? (
+                    <DetailLeconSkeleton />
+                ) : (
+                    <div className="animate-in fade-in duration-300 space-y-6">
+                        {/* Alert Succès */}
+                        {successMsg && (
+                            <div className="alert bg-success/10 border-none rounded-xl text-success font-bold text-xs p-3 flex gap-2.5 shadow-xs">
+                                <Award size={18} className="shrink-0" />
+                                <span>{successMsg}</span>
+                            </div>
+                        )}
+
+                        {/* Cartes d'infos */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="bg-base-200/40 dark:bg-base-200/30 p-4 rounded-xl border border-base-200 dark:border-base-300/40">
+                                <p className="text-[9px] font-black uppercase opacity-40 tracking-wider mb-1.5">Objectif pédagogique</p>
+                                <p className="font-medium text-xs leading-relaxed text-base-content/85">{lecon.description || "Aucune description de cours."}</p>
+                            </div>
+
+                            <div className="bg-base-200/40 dark:bg-base-200/30 p-4 rounded-xl border border-base-200 dark:border-base-300/40 flex items-center justify-between">
+                                <div>
+                                    <p className="text-[9px] font-black uppercase opacity-40 tracking-wider mb-1">Durée estimée</p>
+                                    <p className="font-black text-xl text-primary">{lecon.duree || "45 min"}</p>
+                                </div>
+                                <div className="p-2.5 bg-primary/10 rounded-xl text-primary">
+                                    <Clock size={20} />
+                                </div>
+                            </div>
+
+                            <div className="bg-base-200/40 dark:bg-base-200/30 p-4 rounded-xl border border-base-200 dark:border-base-300/40 flex items-center justify-between">
+                                <div>
+                                    <p className="text-[9px] font-black uppercase opacity-40 tracking-wider mb-1">Niveau ciblé</p>
+                                    <p className="font-black text-xl text-primary">{lecon.classe}</p>
+                                </div>
+                                <div className="p-2.5 bg-primary/10 rounded-xl text-primary">
+                                    <GraduationCap size={20} />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Zone de texte du contenu */}
+                        <div className="bg-base-200/30 dark:bg-base-200/20 p-5 md:p-6 rounded-2xl border border-base-200 dark:border-base-300/40">
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="p-2 bg-primary/10 rounded-xl text-primary">
+                                    <BookOpen size={18} />
+                                </div>
+                                <h2 className="text-base font-black uppercase tracking-tight">
+                                    Contenu de la leçon
+                                </h2>
+                            </div>
+
+                            <div className="prose prose-sm max-w-none text-base-content opacity-90 font-medium leading-relaxed prose-headings:font-black prose-p:leading-relaxed">
+                                {lecon.contenu ? (
+                                    <ReactMarkdown>{lecon.contenu}</ReactMarkdown>
+                                ) : (
+                                    <p className="opacity-40 italic text-center py-8 text-xs">
+                                        Le contenu de cette leçon n'a pas encore été rédigé.
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* BOUTONS BAS DE PAGE */}
+                        <div className="flex justify-end pt-2 border-t border-base-200 dark:border-base-300/40">
+                            <button
+                                onClick={() => navigate(`/enseignant/lecons/${id}/exercices`)}
+                                className="btn btn-primary btn-sm rounded-xl px-6 font-bold shadow-xs gap-2 hover:scale-[1.01] active:scale-95 transition-all text-xs"
+                            >
+                                <ClipboardList size={16} />
+                                Voir les exercices associés
+                            </button>
+                        </div>
+                        </div>
+                    )}
             </div>
         </div>
     );

@@ -5,24 +5,23 @@ import NavbarDash from '../UI/NavDash.jsx';
 
 const LayoutParent = () => {
     return (
-        <div className="flex h-screen bg-base-100 overflow-hidden font-sans">
+        <div className="flex h-screen bg-base-100 dark:bg-base-100 overflow-hidden font-sans">
+            {/* Sidebar unifiée (Même fond blanc que le Header) */}
             <SidebarParent />
 
-            <div className="flex-grow flex flex-col min-w-0 bg-base-200">
+            {/* Conteneur de droite (Navbar blanche + Zone de contenu grise encastrée avec coin arrondi concave) */}
+            <div className="flex-grow flex flex-col min-w-0 bg-base-100 dark:bg-base-100">
                 <NavbarDash />
 
-                {/* Le secret est ici : flex flex-col et min-h-full */}
-                <main className="flex-grow overflow-y-auto p-4 lg:p-8">
-                    <div className="max-w-7xl mx-auto min-h-full flex flex-col">
-
-                        {/* Le contenu prend tout l'espace disponible grâce à flex-grow */}
+                {/* Zone de contenu principale encastrée unifiée */}
+                <main className="flex-grow overflow-y-auto bg-base-200/60 dark:bg-base-200 rounded-tl-2xl border-t border-l border-base-300/60 shadow-sm flex flex-col justify-between p-4 sm:p-5">
+                    <div className="w-full h-full flex flex-col flex-grow">
                         <div className="flex-grow">
                             <Outlet />
                         </div>
 
-                        {/* Le footer restera donc naturellement poussé tout en bas */}
-                        <footer className="mt-auto py-8 border-t border-base-300 text-center opacity-50">
-                            <p className="text-xs font-bold uppercase tracking-widest">
+                        <footer className="mt-auto py-4 border-t border-base-300/40 text-center opacity-40">
+                            <p className="text-[10px] font-bold uppercase tracking-widest">
                                 Math Learning Tool — Plateforme Éducative
                             </p>
                         </footer>
