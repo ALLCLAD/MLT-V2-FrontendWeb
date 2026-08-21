@@ -114,9 +114,14 @@ function ProtectionRoutes({children, roleAttendu})
     {
         console.warn(`Accès refusé : rôle ${roleAttendu} attendu, mais l'utilisateur est ${roleUtilisateur}`);
 
-        // redirection vers le login
+        // Redirection intelligente selon le vrai rôle de l'utilisateur connecté
+        const routesParRole = {
+            'PARENT': '/parent/dashboard',
+            'ENSEIGNANT': '/enseignant/dashboard',
+            'ENFANT': '/enfant/dashboard'
+        };
 
-        return <Navigate to={"/login"}/>;
+        return <Navigate to={routesParRole[roleUtilisateur] || "/login"} replace />;
     }
 
     // Tout est bon, on affiche la page ( tableau de bord ) correspondant, ou demandée

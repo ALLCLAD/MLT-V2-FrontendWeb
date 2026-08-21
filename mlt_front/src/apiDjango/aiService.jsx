@@ -6,6 +6,86 @@ const groq = new Groq({
     dangerouslyAllowBrowser: true
 });
 
+// Cache en mémoire des modèles actifs récupérés dynamiquement
+let cachedActiveModels = null;
+let lastFetchTime = 0;
+const CACHE_DURATION_MS = 10 * 60 * 1000; // Cache 10 minutes
+
+/**
+ * Récupère dynamiquement la liste des modèles chat actifs sur le compte Groq
+ */
+const getActiveGroqModels = async () => {
+    const now = Date.now();
+    if (cachedActiveModels && cachedActiveModels.length > 0 && (now - lastFetchTime) < CACHE_DURATION_MS) {
+        return cachedActiveModels;
+    }
+
+    try {
+        const response = await groq.models.list();
+        const models = response.data || [];
+        // Filtrer les modèles actifs (exclure ceux marqués décommissionnés ou whisper/embeddings)
+        const activeModels = models
+            .filter(m => m.active !== false && !m.id.includes('whisper') && !m.id.includes('safetensors') && !m.id.includes('tool-use'))
+            .map(m => m.id);
+
+        if (activeModels.length > 0) {
+            cachedActiveModels = activeModels;
+            lastFetchTime = now;
+            console.log("[Groq AI] Modèles actifs récupérés dynamiquement :", cachedActiveModels);
+            return cachedActiveModels;
+        }
+    } catch (err) {
+        console.warn("[Groq AI] Impossible d'interroger l'endpoint /models, utilisation des secours par défaut :", err?.message);
+    }
+
+    // Liste de secours par défaut en cas de problème réseau d'inspection
+    return [
+        "llama-3.3-70b-versatile",
+        "llama-3.1-8b-instant"
+    ];
+};
+
+/**
+ * HELPER : Tente d'exécuter une requête chat completion avec fallback automatique sur les modèles dynamiquement actifs.
+ */
+const createCompletionWithFallback = async (params) => {
+    const availableModels = await getActiveGroqModels();
+    let lastError = null;
+
+    for (const modelCandidate of availableModels) {
+        try {
+            const completion = await groq.chat.completions.create({
+                ...params,
+                model: modelCandidate,
+            });
+            return completion;
+        } catch (err) {
+            lastError = err;
+            const errMsg = err?.message || '';
+            const errCode = err?.code || err?.status || '';
+
+            // Si le modèle sélectionné renvoie une erreur de dépréciation/not_found, invalider et essayer le suivant
+            if (
+                errCode === 'model_decommissioned' ||
+                errCode === 'model_not_found' ||
+                errCode === 404 ||
+                errCode === 400 ||
+                errMsg.includes('decommissioned') ||
+                errMsg.includes('does not exist') ||
+                errMsg.includes('not_found')
+            ) {
+                console.warn(`[Groq AI] Le modèle "${modelCandidate}" a échoué (${errMsg}). Bascule sur le modèle suivant...`);
+                continue;
+            }
+
+            // Si c'est une autre erreur bloquante, poursuivre vers le modèle suivant au lieu de faire planter
+            console.error(`[Groq AI] Erreur avec "${modelCandidate}" :`, errMsg);
+        }
+    }
+
+    throw lastError || new Error("Aucun modèle Groq n'a pu répondre à la requête.");
+};
+
 /**
  * UTILITAIRE : Calcule le nombre d'exercices requis selon le niveau scolaire
  */
@@ -19,42 +99,53 @@ const getNombreExercicesParClasse = (classe) => {
 
 // --- FONCTIONS EXPORTÉES ---
 
-/**
- * FONCTION 1 : Feedback ludique et aide (Mathy)
- */
 export const getMathyFeedback = async (question, reponseUtilisateur, isCorrect, explicationBack) => {
     const isHintMode = reponseUtilisateur === "DEMANDE_INDICE";
 
     try {
-        const completion = await groq.chat.completions.create({
+        const completion = await createCompletionWithFallback({
             messages: [
                 {
                     role: "system",
-                    content: `Tu es Mathy, un tuteur IA chaleureux pour un enfant du primaire au Togo.
-                    Ton ton : Très joyeux, motivant et bienveillant. Tu t'adresses directement à l'enfant par "tu".
+                    content: `Tu es Mathy, un tuteur IA socratique et bienveillant pour un enfant du primaire au Togo.
+                    Tu t'adresses directement à l'enfant par "tu".
                     
                     REGLES STRICTES :
                     1. ZERO EMOJI : Ne mets JAMAIS d'émojis dans ta réponse. Aucun émoji n'est autorisé.
-                    2. MODE INDICE : Donne une piste très concrète et imagée (en lien avec des situations réelles comme des partages d'objets concrets ou de la monnaie) sans donner la réponse (1 phrase maximum).
-                    3. MODE FEEDBACK : Style Duolingo (très court, direct, max 10 mots). Si correct, félicite directement et sobrement. Si incorrect, encourage positivement et donne un conseil mathématique très concret et simple (pas de longue explication).
-                    4. Format : 1 seule phrase très courte, claire, sans aucun émoji.`
+                    2. MODE INDICE (INTERDICTION DE DONNER LA RÉPONSE) :
+                       - Tu ne dois JAMAIS donner le résultat final, le chiffre exact ou la bonne option.
+                       - Donne un guide étape par étape ou pose une petite question intermédiaire pour mettre l'enfant sur la voie.
+                       - Exemple pour 7 + 5 : "Pense d'abord à compléter 7 pour aller jusqu'à 10, puis ajoute ce qu'il reste."
+                       - Exemple pour un problème : "Demande-toi d'abord si la quantité augmente ou diminue."
+                    3. MODE FEEDBACK (Après validation de la réponse) :
+                       - Si correct : Félicite brièvement et rappelle la règle mathématique.
+                       - Si incorrect : Encourage et réexplique l'étape où se trouve l'erreur sans réprimande.
+                    4. Format : 1 à 2 phrases courtes maximum, claires et sans émoji.`
                 },
                 {
                     role: "user",
                     content: isHintMode
-                        ? `AIDE-MOI : Question "${question}". Explication "${explicationBack}". Indice ludique.`
-                        : `RESULTAT : Question: "${question}" | Réponse: "${reponseUtilisateur}" | Correct: ${isCorrect ? 'OUI' : 'NON'}.`
+                        ? `DEMANDE D'INDICE : Question: "${question}". Guide l'enfant avec une question d'étape ou une méthode guidée. NE DONNE PAS la réponse.`
+                        : `FEEDBACK : Question: "${question}" | Réponse choisie: "${reponseUtilisateur}" | Correct: ${isCorrect ? 'OUI' : 'NON'}. Explique la méthode.`
                 }
             ],
-            model: "llama-3.3-70b-versatile",
-            temperature: 0.8,
+            temperature: 0.6,
             max_tokens: 150,
         });
 
-        return completion.choices[0]?.message?.content;
+        const reply = completion.choices[0]?.message?.content;
+        if (reply) return reply;
+
+        if (isHintMode) {
+            return "Réfléchis bien à la première étape du calcul. Que dois-tu poser ou compter en premier ?";
+        }
+        return isCorrect ? "Bravo, tu as appliqué la bonne méthode !" : "Regarde bien l'explication pour comprendre l'étape du calcul.";
     } catch (error) {
         console.error("Erreur Groq feedback:", error);
-        return "Continue comme ça, tu deviens de plus en plus fort !";
+        if (isHintMode) {
+            return "Réfléchis bien à la première étape du calcul. Que dois-tu poser ou compter en premier ?";
+        }
+        return isCorrect ? "Bravo ! Tu as trouvé la bonne réponse !" : "Ce n'est pas grave, observe bien l'étape pour réessayer !";
     }
 };
 
@@ -63,7 +154,7 @@ export const getMathyFeedback = async (question, reponseUtilisateur, isCorrect, 
  */
 export const genererContenuLecon = async (titre, description, classe) => {
     try {
-        const completion = await groq.chat.completions.create({
+        const completion = await createCompletionWithFallback({
             messages: [
                 {
                     role: "system",
@@ -78,7 +169,7 @@ export const genererContenuLecon = async (titre, description, classe) => {
                     - Évite les phrases générales et le blabla inutile, va droit au concept mathématique concret.
                     
                     INTERDICTION STRICTE :
-                    - Ne mets AUCUN émoji dans ton texte. Les émojis sont strictement interdits.
+                    - Ne mets AUCUN émoji dans ton texte. Les émojis sont strictly interdits.
 
                     STRUCTURE OBLIGATOIRE (Titres en chiffres romains) :
                     ## 1. Introduction
@@ -102,7 +193,6 @@ export const genererContenuLecon = async (titre, description, classe) => {
                     content: `Écris une leçon courte (max 250 mots) pour moi. Titre : "${titre}". Description : "${description}".`
                 }
             ],
-            model: "llama-3.3-70b-versatile",
             temperature: 0.7,
             max_tokens: 600,
         });
@@ -116,13 +206,12 @@ export const genererContenuLecon = async (titre, description, classe) => {
 
 /**
  * FONCTION 2b : Reformatage et amélioration d'un contenu de document importé (PDF/Word)
- * Prend le texte brut extrait du document et le reformate en Markdown pédagogique
  */
 export const genererContenuLeconDepuisDocument = async (titre, classe, documentText, consignes = '') => {
     try {
         const texteLimité = documentText.substring(0, 4000);
 
-        const completion = await groq.chat.completions.create({
+        const completion = await createCompletionWithFallback({
             messages: [
                 {
                     role: "system",
@@ -163,7 +252,6 @@ ${texteLimité}
 Réécris ce contenu en Markdown pédagogique clair.`
                 }
             ],
-            model: "llama-3.3-70b-versatile",
             temperature: 0.6,
             max_tokens: 700,
         });
@@ -177,13 +265,12 @@ Réécris ce contenu en Markdown pédagogique clair.`
 
 /**
  * FONCTION 3 : Génération dynamique d'exercices (JSON)
- * OPTIMISÉE POUR LA VOIX MATHY
  */
 export const genererExercices = async (titre, classe, contenu, theme = '') => {
     const nbExercices = getNombreExercicesParClasse(classe);
 
     try {
-        const completion = await groq.chat.completions.create({
+        const completion = await createCompletionWithFallback({
             messages: [
                 {
                     role: "system",
@@ -199,7 +286,7 @@ export const genererExercices = async (titre, classe, contenu, theme = '') => {
                     - Les questions doivent être claires et avoir un intérêt mathématique rigoureux.
                     - ZERO EMOJI : Ne mets aucun émoji dans tes questions ou explications.
 
-                    RÈGLES POUR LES TYPES D'EXERCICES :
+                    RÈGLES POUR LES TYPES D me D'EXERCICES :
                     1. QCM : Questions théoriques classiques. Renseigne "question", "reponse_correcte", "mauvaises_reponses" (séparées par des virgules) et laisse "donnees_exercice" à null.
                     2. CALCUL_ECRIT : Exercices de calcul posé en colonnes (ex: addition, soustraction, multiplication). Renseigne "type_exercice": "CALCUL_ECRIT", "question": "Pose et effectue : A [opérateur] B", "reponse_correcte": "résultat", et "donnees_exercice": {"operande1": "A", "operande2": "B", "operateur": "+ ou - ou x"}. Les opérandes doivent être des nombres entiers ou décimaux cohérents avec le niveau scolaire.
                     3. CALCUL_MENTAL : Exercices de calcul rapide en ligne. Renseigne "type_exercice": "CALCUL_MENTAL", "question": "Calcule : A x B", "reponse_correcte": "résultat", et laisse "donnees_exercice" à null.
@@ -229,7 +316,6 @@ export const genererExercices = async (titre, classe, contenu, theme = '') => {
                     content: `Niveau ${classe}. Thème de la leçon : "${theme || 'Calcul'}". Titre : "${titre}". Contenu de la leçon : "${contenu?.substring(0, 1000)}".`
                 }
             ],
-            model: "llama-3.3-70b-versatile",
             temperature: 0.5,
             max_tokens: 3800,
         });
@@ -249,11 +335,10 @@ export const genererExercices = async (titre, classe, contenu, theme = '') => {
 
 /**
  * FONCTION 4 : Complétion d'un exercice manuel
- * OPTIMISÉE POUR LA CONCISION
  */
 export const genererReponseExercice = async (question, classe) => {
     try {
-        const completion = await groq.chat.completions.create({
+        const completion = await createCompletionWithFallback({
             messages: [
                 {
                     role: "system",
@@ -267,7 +352,6 @@ export const genererReponseExercice = async (question, classe) => {
                     content: `Question: "${question}" | Niveau: ${classe}. Format JSON: {"reponse_correcte": "", "mauvaises_reponses": "r1, r2, r3", "explication": ""}`
                 }
             ],
-            model: "llama-3.3-70b-versatile",
             temperature: 0.3,
             max_tokens: 400,
         });

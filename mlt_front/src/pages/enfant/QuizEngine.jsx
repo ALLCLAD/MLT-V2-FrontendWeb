@@ -235,16 +235,17 @@ const QuizEngine = ({ theme, typeFilter = 'QCM', onBack }) => {
 
         try {
             const feedback = await getMathyFeedback(currentQ.texte, option, check, currentQ.explication);
-            setAiFeedback(feedback);
+            const textToDisplay = feedback || currentQ.explication || (check ? "Bravo ! C'est la bonne réponse." : "Regarde la méthode pour comprendre.");
+            setAiFeedback(textToDisplay);
             
-            // Sélectionner et lire une phrase d'encouragement au lieu de l'explication écrite
+            // Lecture vocale de la phrase d'encouragement
             const phrases = check ? CORRECT_PHRASES : INCORRECT_PHRASES;
             const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
             speakTextSafe(randomPhrase);
         } catch (err) {
-            const defaultFeedback = check ? "Bravo ! C'est la bonne réponse." : "Dommage, regarde l'explication !";
+            const defaultFeedback = currentQ.explication || (check ? "Bravo ! C'est la bonne réponse." : "Regarde la méthode pour comprendre.");
             setAiFeedback(defaultFeedback);
-            speakTextSafe(defaultFeedback);
+            speakTextSafe(check ? "Bravo !" : "Essaie encore !");
         } finally {
             setIsAiLoading(false);
         }
@@ -291,13 +292,14 @@ const QuizEngine = ({ theme, typeFilter = 'QCM', onBack }) => {
 
         const currentQ = questions[currentIndex];
         try {
-            const hintMsg = await getMathyFeedback(currentQ.texte, "DEMANDE_INDICE", false, currentQ.explication);
-            setHint(hintMsg);
-            speakTextSafe(hintMsg); // Lecture directe de l'aide pour l'enfant
+            const hintMsg = await getMathyFeedback(currentQ.texte, "DEMANDE_INDICE", false, "");
+            const textHint = hintMsg || "Réfléchis bien à la méthode et aux nombres de la question !";
+            setHint(textHint);
+            speakTextSafe(textHint);
         } catch (err) {
-            const fallbackHint = "Réfléchis bien au lien entre les nombres !";
+            const fallbackHint = "Observe bien les nombres et la question pour trouver l'étape à suivre.";
             setHint(fallbackHint);
-            speakTextSafe("Réfléchis bien au lien entre les nombres !");
+            speakTextSafe(fallbackHint);
         } finally {
             setIsAiLoading(false);
         }
@@ -323,45 +325,41 @@ const QuizEngine = ({ theme, typeFilter = 'QCM', onBack }) => {
 
     const cardContent = (
         <div className="flex-1 flex flex-col justify-between">
-            {/* HEADER */}
-            <div className="px-6 py-4 flex justify-between items-center border-b border-base-200 bg-gradient-to-r from-base-100 to-base-200/20">
-                <button onClick={() => { stopAllAudio(); onBack(); }} className="text-base-content/40 hover:text-error font-black text-xs flex items-center gap-1 transition-colors">
-                    <ChevronLeft size={16} /> QUITTER
+            {/* TOP BAR EXÉCUTION UNIFORMISÉE */}
+            <div className="px-5 py-3.5 flex justify-between items-center border-b border-base-200 dark:border-base-300/60 bg-base-100 dark:bg-base-100">
+                <button 
+                    onClick={() => { stopAllAudio(); onBack(); }} 
+                    className="btn btn-xs btn-ghost text-base-content/60 hover:text-error font-black uppercase text-[10px] tracking-wider gap-1"
+                >
+                    <ChevronLeft size={14} /> Quitter
                 </button>
 
-                {/* Label du mode + outils d'aide */}
                 <div className="flex items-center gap-2">
                     <button 
                         onClick={() => {
                             setIsBrouillonOpen(!isBrouillonOpen);
-                            if (!isBrouillonOpen) {
-                                setIsBatonnetsOpen(false);
-                            }
+                            if (!isBrouillonOpen) setIsBatonnetsOpen(false);
                         }}
-                        className={`btn btn-sm rounded-xl font-black flex items-center gap-1.5 text-[11px] hover:scale-105 transition-all ${isBrouillonOpen ? 'btn-primary px-3' : 'btn-outline btn-primary'}`}
-                        title="Brouillon"
+                        className={`btn btn-xs rounded-xl font-bold flex items-center gap-1 text-[10px] uppercase tracking-wider ${isBrouillonOpen ? 'btn-primary text-white shadow-xs' : 'bg-base-200/70 border-base-300/50'}`}
                     >
                         <Pencil size={12} />
-                        {!anyOpen && <span className="hidden sm:inline">Brouillon</span>}
+                        <span>Brouillon</span>
                     </button>
                     <button 
                         onClick={() => {
                             setIsBatonnetsOpen(!isBatonnetsOpen);
-                            if (!isBatonnetsOpen) {
-                                setIsBrouillonOpen(false);
-                            }
+                            if (!isBatonnetsOpen) setIsBrouillonOpen(false);
                         }}
-                        className={`btn btn-sm rounded-xl font-black flex items-center gap-1.5 text-[11px] hover:scale-105 transition-all ${isBatonnetsOpen ? 'btn-warning text-white px-3' : 'btn-outline btn-warning'}`}
-                        title="Bâtonnets"
+                        className={`btn btn-xs rounded-xl font-bold flex items-center gap-1 text-[10px] uppercase tracking-wider ${isBatonnetsOpen ? 'btn-warning text-white shadow-xs' : 'bg-base-200/70 border-base-300/50'}`}
                     >
                         <LayoutGrid size={12} />
-                        {!anyOpen && <span className="hidden sm:inline">Bâtonnets</span>}
+                        <span>Bâtonnets</span>
                     </button>
                 </div>
 
-                <div className="flex gap-1">
+                <div className="flex gap-1 items-center bg-amber-500/10 px-2 py-0.5 rounded-full">
                     {[...Array(3)].map((_, i) => (
-                        <Star key={i} size={18} className={i < hintsLeft ? 'text-amber-400 fill-amber-400' : 'text-base-300'} />
+                        <Star key={i} size={14} className={i < hintsLeft ? 'text-amber-500 fill-amber-500' : 'text-base-300'} />
                     ))}
                 </div>
             </div>
@@ -486,18 +484,18 @@ const QuizEngine = ({ theme, typeFilter = 'QCM', onBack }) => {
     const isDockedToolOpen = isBrouillonOpen || isBatonnetsOpen;
 
     return (
-        <div className="min-h-screen bg-base-200/30 p-4 font-sans text-slate-800 flex items-start justify-center pt-6">
-            <div className={`w-full transition-all duration-300 ${isDockedToolOpen ? 'max-w-[1400px]' : 'max-w-5xl'}`}>
-                <div className={`bg-base-100 rounded-[2.5rem] shadow-2xl border border-base-200 overflow-hidden flex flex-col ${isDockedToolOpen ? 'lg:flex-row' : ''}`}>
+        <div className="space-y-5 font-sans antialiased">
+            <div className={`transition-all duration-300 ${isDockedToolOpen ? 'w-full' : 'max-w-4xl mx-auto'}`}>
+                <div className={`bg-base-100 dark:bg-base-100 rounded-2xl shadow-sm border border-base-300/60 overflow-hidden flex flex-col ${isDockedToolOpen ? 'lg:flex-row' : ''}`}>
                     
-                    {/* ── COLONNE PRINCIPALE ── */}
-                    <div className="flex-1 flex flex-col min-h-[75vh]">
+                    {/* ── COLONNE PRINCIPALE DE RÉSOLUTIONS ── */}
+                    <div className="flex-1 flex flex-col min-h-[500px]">
                         {cardContent}
                     </div>
 
-                    {/* ── PANNEAU OUTIL DOCKÉ ── */}
+                    {/* ── PANNEAU OUTIL DOCKÉ (BROUILLON / BÂTONNETS) ── */}
                     {isDockedToolOpen && (
-                        <div className="w-full lg:w-[480px] shrink-0 border-t lg:border-t-0 lg:border-l border-base-200/60 bg-base-200/5 p-4 flex flex-col h-[50vh] lg:h-auto justify-stretch">
+                        <div className="w-full lg:w-[380px] shrink-0 border-t lg:border-t-0 lg:border-l border-base-300/60 bg-base-200/40 p-4 flex flex-col h-[450px] lg:h-auto justify-stretch">
                             {isBrouillonOpen && (
                                 <BrouillonCanvas
                                     isOpen={isBrouillonOpen}

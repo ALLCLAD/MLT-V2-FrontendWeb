@@ -1,8 +1,35 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { Home, ArrowLeft } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Home, ArrowLeft, LayoutDashboard } from 'lucide-react';
+import { jwtDecode } from 'jwt-decode';
+import { ACCESS_TOKEN } from '../apiDjango/constantes';
 
 const NotFound = () => {
+    const navigate = useNavigate();
+    const [userRole, setUserRole] = useState(null);
+
+    useEffect(() => {
+        const token = localStorage.getItem(ACCESS_TOKEN);
+        if (token) {
+            try {
+                const decoded = jwtDecode(token);
+                if (decoded.exp * 1000 > Date.now()) {
+                    setUserRole(decoded.role);
+                }
+            } catch (err) {
+                setUserRole(null);
+            }
+        }
+    }, []);
+
+    const routesDashboard = {
+        'PARENT': '/parent/dashboard',
+        'ENSEIGNANT': '/enseignant/dashboard',
+        'ENFANT': '/enfant/dashboard'
+    };
+
+    const dashboardPath = userRole ? routesDashboard[userRole] : null;
+
     return (
         <div className="min-h-screen bg-base-100 flex flex-col overflow-hidden relative">
 
@@ -45,7 +72,7 @@ const NotFound = () => {
             {/* ── NAVBAR ── */}
             <nav className="relative z-10 border-b border-base-content/10 px-6 md:px-12 py-4">
                 <Link
-                    to="/"
+                    to={dashboardPath || "/"}
                     className="inline-flex items-center gap-2 text-base-content/50 hover:text-primary font-semibold text-sm transition-colors"
                 >
                     <ArrowLeft size={15} />
@@ -74,24 +101,36 @@ const NotFound = () => {
                 {/* Description */}
                 <p className="max-w-sm text-base-content/50 text-base font-medium leading-relaxed mb-10 fade-up delay-2">
                     L'adresse que vous avez saisie n'existe pas ou a été déplacée.
-                    Vérifiez l'URL ou retournez à l'accueil.
+                    {dashboardPath ? " Retournez à votre tableau de bord en toute sécurité." : " Vérifiez l'URL ou retournez à l'accueil."}
                 </p>
 
-                {/* CTAs */}
+                {/* CTAs DYNAMIQUES */}
                 <div className="flex flex-col sm:flex-row gap-3 fade-up delay-3">
-                    <Link
-                        to="/"
-                        id="btn-retour-accueil"
-                        className="btn btn-primary rounded-xl px-7 font-bold shadow-md border-none
-                                   hover:scale-[1.03] active:scale-95 transition-all flex items-center gap-2"
-                    >
-                        <Home size={16} />
-                        Retour à l'accueil
-                    </Link>
+                    {dashboardPath ? (
+                        <Link
+                            to={dashboardPath}
+                            id="btn-retour-dashboard"
+                            className="btn btn-primary rounded-xl px-7 font-bold shadow-md border-none
+                                       hover:scale-[1.03] active:scale-95 transition-all flex items-center gap-2"
+                        >
+                            <LayoutDashboard size={16} />
+                            Mon Tableau de Bord
+                        </Link>
+                    ) : (
+                        <Link
+                            to="/"
+                            id="btn-retour-accueil"
+                            className="btn btn-primary rounded-xl px-7 font-bold shadow-md border-none
+                                       hover:scale-[1.03] active:scale-95 transition-all flex items-center gap-2"
+                        >
+                            <Home size={16} />
+                            Retour à l'accueil
+                        </Link>
+                    )}
 
                     <button
                         id="btn-retour-historique"
-                        onClick={() => window.history.back()}
+                        onClick={() => navigate(-1)}
                         className="btn btn-ghost rounded-xl px-7 font-bold border border-base-content/10
                                    hover:bg-base-200 transition-all flex items-center gap-2"
                     >

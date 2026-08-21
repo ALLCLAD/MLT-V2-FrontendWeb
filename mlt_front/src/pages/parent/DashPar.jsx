@@ -550,10 +550,10 @@ const DashPar = () => {
                                     <div className="p-3 bg-base-200/50 dark:bg-base-200/40 rounded-xl border border-base-200 dark:border-base-300/40">
                                         <p className="text-xs font-bold italic text-base-content/70">
                                             {moyenne >= 15
-                                                ? "🌟 Fantastique ! La famille progresse admirablement."
+                                                ? "Fantastique ! La famille progresse admirablement."
                                                 : moyenne >= 10
-                                                    ? "💪 Bonne dynamique ! Continuez d'encourager vos enfants."
-                                                    : "🚀 Motivez vos enfants ! De belles améliorations à venir."}
+                                                    ? "Bonne dynamique ! Continuez d'encourager vos enfants."
+                                                    : "Motivez vos enfants ! De belles améliorations à venir."}
                                         </p>
                                     </div>
                                 </div>

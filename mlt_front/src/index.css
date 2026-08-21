@@ -6,6 +6,19 @@
     --p: 230 100% 50%;
 }
 
+/* Force le fond des composants DaisyUI base-200 en blanc pur en mode clair */
+[data-theme="light"] {
+    background-color: #ffffff !important;
+}
+
+[data-theme="light"] .bg-base-200,
+[data-theme="light"] .bg-base-200\/60,
+[data-theme="light"] .bg-base-200\/50,
+[data-theme="light"] .bg-base-200\/40,
+[data-theme="light"] .bg-base-200\/30 {
+    background-color: #ffffff !important;
+}
+
 /* 📖 DESIGN ET MISE EN PAGE DE LA LEÇON (ReactMarkdown) */
 .prose {
     font-family: 'Outfit', 'Inter', sans-serif;
