@@ -71,6 +71,7 @@ const CalculEcritEngine = ({ onBack }) => {
     // ── SOUMETTRE UNE RÉPONSE ──────────────────────────────────────────────────
     const handleAnswer = async (userAnswer) => {
         if (showFeedback || finished) return;
+        stopAllAudio();
         clearInterval(timerRef.current);
 
         const q = questions[currentIndex];
@@ -110,6 +111,7 @@ const CalculEcritEngine = ({ onBack }) => {
 
     // ── QUESTION SUIVANTE ──────────────────────────────────────────────────────
     const handleNext = () => {
+        stopAllAudio();
         if (currentIndex >= questions.length - 1) { handleFinish(false); return; }
         setShowFeedback(false);
         setAiFeedback('');
@@ -126,6 +128,7 @@ const CalculEcritEngine = ({ onBack }) => {
 
     // ── TERMINER ───────────────────────────────────────────────────────────────
     const handleFinish = async (timeout = false, finalAnswers = answers, finalScore = score) => {
+        stopAllAudio();
         clearInterval(timerRef.current);
         setFinished(true);
         if (finalScore > 0) confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
