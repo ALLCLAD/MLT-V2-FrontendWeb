@@ -374,34 +374,36 @@ export const getProblemeProcedure = async (probleme, userAnswers, totalScore) =>
     try {
         const questionsList = (probleme.questions || []).map((q, i) => {
             const userAns = userAnswers[q.sous_id] || 'Non répondu';
-            return `Étape ${i + 1} - Question: "${q.question}" | Réponse choisie par l'élève: "${userAns}" | Réponse correcte attendue: "${q.reponse_correcte} ${q.unite || ''}" | Explication pédagogique: "${q.explication || ''}"`;
+            return `Étape ${i + 1} - Question: "${q.question}" | Réponse élève: "${userAns}" | Réponse attendue: "${q.reponse_correcte} ${q.unite || ''}" | Explication: "${q.explication || ''}"`;
         }).join('\n');
 
-        const prompt = `Problème de mathématiques :
-Énoncé du problème : "${probleme.enonce}"
+        const prompt = `Énoncé du problème : "${probleme.enonce}"
 
-Détail des étapes et questions :
-${questionsList}
-
-Résultat de l'élève : ${totalScore} bonne(s) réponse(s) sur ${probleme.questions.length}.
-
-Consigne : Rédige la PROCÉDURE COMPLÈTE et détaillée de résolution étape par étape pour ce problème.
-Explique clairement chaque étape du calcul, les opérations à effectuer et le raisonnement pour arriver aux bons résultats.
-Tu t'adresses à l'enfant de manière claire, structurée et pédagogique. N'utilise AUCUN émoji.`;
+Étapes :
+${questionsList}`;
 
         const completion = await createCompletionWithFallback({
             messages: [
                 {
                     role: "system",
-                    content: "Tu es Mathy, tuteur de mathématiques. Rédige une procédure de résolution étape par étape claire, complète et pédagogique pour l'élève. N'utilise jamais d'émojis."
+                    content: `Tu es Mathy, un tuteur de mathématiques pour un enfant du primaire.
+                    
+                    CONSIGNES DE FORMATAGE (STRICTES) :
+                    1. Rédige une explication COURTE et CONCISE (maximum 80 à 120 mots). Va droit à l'essentiel.
+                    2. Résume uniquement la démarche pas à pas pour trouver le bon résultat de chaque étape.
+                    3. PAS DE TABLEAUX Markdown.
+                    4. PAS DE FORMULES LaTeX complexes (ne mets jamais de \\[ \\] ni de \\text{}). Écris les calculs simplement sur une ligne (ex: 44 + 15 = 59).
+                    5. PAS de longs conseils de méthode généraux ou d'introduction inutile.
+                    6. ZERO EMOJI : Aucun émoji n'est autorisé.
+                    7. Utilise des puces simples et courtes pour chaque étape.`
                 },
                 {
                     role: "user",
                     content: prompt
                 }
             ],
-            temperature: 0.5,
-            max_tokens: 600,
+            temperature: 0.4,
+            max_tokens: 250,
         });
 
         const reply = completion.choices[0]?.message?.content;
@@ -410,12 +412,8 @@ Tu t'adresses à l'enfant de manière claire, structurée et pédagogique. N'uti
         console.warn("[Groq AI] Impossible de générer la procédure via AI, secours sur procédure locale :", err);
     }
 
-    // Procédure locale de secours en cas de hors-ligne ou d'erreur API
-    return `Procédure complète de résolution du problème :
-
-Énoncé : ${probleme.enonce}
-
-${(probleme.questions || []).map((q, i) => `Étape ${i + 1} : ${q.question}
-• Démarche & Calcul : ${q.explication || `Effectuer le calcul approprié pour obtenir ${q.reponse_correcte} ${q.unite || ''}.`}
-• Résultat exact : ${q.reponse_correcte} ${q.unite || ''}`).join('\n\n')}`;
+    // Procédure locale de secours épurée
+    return (probleme.questions || []).map((q, i) => 
+        `Étape ${i + 1} (${q.question}) :\n• Démarche & Calcul : ${q.explication || `Effectuer le calcul pour obtenir ${q.reponse_correcte} ${q.unite || ''}.`}\n• Résultat : ${q.reponse_correcte} ${q.unite || ''}`
+    ).join('\n\n');
 };

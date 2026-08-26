@@ -91,10 +91,9 @@ const ProblemeEngine = ({ onBack }) => {
             setGlobalFeedback(proc);
         } catch (e) {
             console.error("Erreur génération procédure AI:", e);
-            const fallbackProc = `Procédure complète de résolution :
-${(probleme.questions || []).map((q, i) => `Étape ${i + 1} (${q.question}) :
-• Calcul & Démarche : ${q.explication || `Obtenir ${q.reponse_correcte} ${q.unite || ''}.`}
-• Résultat attendu : ${q.reponse_correcte} ${q.unite || ''}`).join('\n\n')}`;
+            const fallbackProc = (probleme.questions || []).map((q, i) => 
+                `Étape ${i + 1} (${q.question}) :\n• Démarche : ${q.explication || `Calculer pour trouver ${q.reponse_correcte} ${q.unite || ''}.`}\n• Résultat : ${q.reponse_correcte} ${q.unite || ''}`
+            ).join('\n\n');
             setGlobalFeedback(fallbackProc);
         } finally {
             setIsAiLoading(false);
@@ -106,7 +105,8 @@ ${(probleme.questions || []).map((q, i) => `Étape ${i + 1} (${q.question}) :
         if (totalScore === total) {
             msgEncouragement = "Félicitations ! Tu as réussi l'intégralité du problème avec un sans-faute ! C'est un travail formidable !";
         } else if (totalScore > 0) {
-            msgEncouragement = `Bravo pour tes efforts ! Tu as trouvé ${totalScore} bonne${totalScore > 1 ? 's' : ''} réponse${totalScore > 1 ? 's' : ''} sur ${total}. Lis bien la démarche de résolution ci-dessous !`;
+            const scoreTxt = totalScore === 1 ? "une" : totalScore;
+            msgEncouragement = `Bravo pour tes efforts ! Tu as trouvé ${scoreTxt} bonne${totalScore > 1 ? 's' : ''} réponse${totalScore > 1 ? 's' : ''} sur ${total}. Lis bien la démarche de résolution ci-dessous !`;
         } else {
             msgEncouragement = "Ne te décourage surtout pas ! Analyse attentivement la démarche de chaque question ci-dessous pour bien comprendre.";
         }
