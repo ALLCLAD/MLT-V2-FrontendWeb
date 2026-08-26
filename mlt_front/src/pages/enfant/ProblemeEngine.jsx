@@ -6,8 +6,9 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import api from '../../apiDjango/api.jsx';
-import { getMathyFeedback } from '../../apiDjango/aiService';
+import { getMathyFeedback, getProblemeProcedure } from '../../apiDjango/aiService';
 import { speakTextSafe, stopAllAudio } from '../../apiDjango/ttsService';
+import LecteurVocal from '../../composants/LecteurVocal';
 import BrouillonCanvas from '../../composants/UIenfant/BrouillonCanvas';
 import BatonnetsComptage from '../../composants/UIenfant/BatonnetsComptage';
 
@@ -86,18 +87,30 @@ const ProblemeEngine = ({ onBack }) => {
 
         setIsAiLoading(true);
         try {
-            const ctx = `Problème : "${probleme.enonce}" — Score : ${totalScore}/${probleme.questions.length}`;
-            const fb = await getMathyFeedback(ctx, totalScore === probleme.questions.length ? 'BONNE_REPONSE' : 'MAUVAISE_REPONSE', totalScore === probleme.questions.length, '');
-            setGlobalFeedback(fb);
-            speakTextSafe(fb);
-        } catch {
-            setGlobalFeedback(totalScore === probleme.questions.length
-                ? 'Bravo ! Tu as tout réussi !'
-                : `${totalScore} bonne(s) réponse(s) sur ${probleme.questions.length}.`
-            );
+            const proc = await getProblemeProcedure(probleme, userAnswers, totalScore);
+            setGlobalFeedback(proc);
+        } catch (e) {
+            console.error("Erreur génération procédure AI:", e);
+            const fallbackProc = `Procédure complète de résolution :
+${(probleme.questions || []).map((q, i) => `Étape ${i + 1} (${q.question}) :
+• Calcul & Démarche : ${q.explication || `Obtenir ${q.reponse_correcte} ${q.unite || ''}.`}
+• Résultat attendu : ${q.reponse_correcte} ${q.unite || ''}`).join('\n\n')}`;
+            setGlobalFeedback(fallbackProc);
         } finally {
             setIsAiLoading(false);
         }
+
+        // Message d'encouragement parlé par la voix (uniquement l'encouragement, pas la procédure)
+        const total = probleme.questions.length;
+        let msgEncouragement = "";
+        if (totalScore === total) {
+            msgEncouragement = "Félicitations ! Tu as réussi l'intégralité du problème avec un sans-faute ! C'est un travail formidable !";
+        } else if (totalScore > 0) {
+            msgEncouragement = `Bravo pour tes efforts ! Tu as trouvé ${totalScore} bonne${totalScore > 1 ? 's' : ''} réponse${totalScore > 1 ? 's' : ''} sur ${total}. Lis bien la démarche de résolution ci-dessous !`;
+        } else {
+            msgEncouragement = "Ne te décourage surtout pas ! Analyse attentivement la démarche de chaque question ci-dessous pour bien comprendre.";
+        }
+        speakTextSafe(msgEncouragement);
 
         setIsSaving(true);
         try {
@@ -114,13 +127,48 @@ const ProblemeEngine = ({ onBack }) => {
     const allAnswered = probleme && probleme.questions.every(q => String(userAnswers[q.sous_id] || '').trim() !== '');
     const filledCount = probleme ? Object.values(userAnswers).filter(v => v !== '').length : 0;
 
-    // ── ÉTATS SPÉCIAUX ─────────────────────────────────────────────────────────
-    if (loading) return (
-        <div className="min-h-screen bg-base-200/30 flex items-center justify-center">
-            <div className="flex flex-col items-center gap-3">
-                <Loader2 size={40} className="text-primary animate-spin" />
-                <p className="font-black text-base-content/50 uppercase tracking-widest text-xs">Chargement...</p>
+const ExerciseHeaderSkeleton = () => (
+    <div className="px-6 py-4 flex justify-between items-center border-b border-base-200 bg-gradient-to-r from-base-100 to-base-200/20 animate-pulse">
+        <div className="w-16 h-5 bg-base-300 rounded-lg"></div>
+        <div className="flex gap-1">
+            <div className="w-5 h-5 bg-base-300 rounded-full"></div>
+            <div className="w-5 h-5 bg-base-300 rounded-full"></div>
+            <div className="w-5 h-5 bg-base-300 rounded-full"></div>
+        </div>
+    </div>
+);
+
+const ExerciseContentSkeleton = () => (
+    <div className="flex-1 p-6 md:p-8 flex flex-col items-center space-y-8 animate-pulse w-full">
+        <div className="w-full max-w-2xl space-y-2">
+            <div className="flex justify-between">
+                <div className="w-28 h-4 bg-base-300 rounded-lg"></div>
+                <div className="w-12 h-4 bg-base-300 rounded-lg"></div>
             </div>
+            <div className="w-full h-3 bg-base-300 rounded-full"></div>
+        </div>
+        <div className="w-full max-w-2xl text-center py-6 space-y-2">
+            <div className="w-3/4 h-8 bg-base-300 rounded-xl mx-auto"></div>
+            <div className="w-1/2 h-6 bg-base-300 rounded-xl mx-auto"></div>
+        </div>
+        <div className="w-full max-w-2xl flex flex-col md:flex-row items-center gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 w-full">
+                <div className="h-16 bg-base-300 rounded-2xl w-full"></div>
+                <div className="h-16 bg-base-300 rounded-2xl w-full"></div>
+                <div className="h-16 bg-base-300 rounded-2xl w-full"></div>
+                <div className="h-16 bg-base-300 rounded-2xl w-full"></div>
+            </div>
+            <div className="w-20 h-20 bg-base-300 rounded-3xl shrink-0"></div>
+        </div>
+        <div className="w-16 h-16 bg-base-300 rounded-full mx-auto"></div>
+    </div>
+);
+
+// ── ÉTATS SPÉCIAUX ─────────────────────────────────────────────────────────
+    if (loading) return (
+        <div className="w-full max-w-4xl mx-auto bg-base-100 dark:bg-base-100 rounded-2xl shadow-sm border border-base-300/60 overflow-hidden flex flex-col min-h-[500px]">
+            <ExerciseHeaderSkeleton />
+            <ExerciseContentSkeleton />
         </div>
     );
 
@@ -139,9 +187,8 @@ const ProblemeEngine = ({ onBack }) => {
 
     // ── RENDU PRINCIPAL ────────────────────────────────────────────────────────
     return (
-        <div className="min-h-screen bg-base-200/30 p-4 font-sans flex items-start justify-center pt-6">
-            <div className={`w-full transition-all duration-300 ${anyOpen ? 'max-w-[1400px]' : 'max-w-5xl'}`}>
-                <div className={`bg-base-100 rounded-[2.5rem] shadow-2xl border border-base-200 overflow-hidden flex flex-col ${anyOpen ? 'lg:flex-row' : ''}`}>
+        <div className={`transition-all duration-300 ${anyOpen ? 'w-full' : 'max-w-4xl mx-auto'}`}>
+            <div className={`bg-base-100 rounded-2xl shadow-sm border border-base-300/60 overflow-hidden flex flex-col ${anyOpen ? 'lg:flex-row' : ''}`}>
 
                     {/* ── COLONNE PRINCIPALE ── */}
                     <div className="flex-1 flex flex-col min-h-0">
@@ -182,8 +229,11 @@ const ProblemeEngine = ({ onBack }) => {
                         <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-5">
 
                             {/* ── ÉNONCÉ ── */}
-                            <div className="rounded-2xl border border-base-200 bg-base-200/30 p-5">
-                                <p className="text-xs font-black uppercase tracking-widest text-primary/70 mb-2">Problème</p>
+                            <div className="rounded-2xl border border-base-200 bg-base-200/30 p-5 space-y-3">
+                                <div className="flex justify-between items-center gap-2">
+                                    <p className="text-xs font-black uppercase tracking-widest text-primary/70">Énoncé du problème</p>
+                                    <LecteurVocal texte={probleme.enonce} title="Écouter l'énoncé" variant="compact" />
+                                </div>
                                 <p className="text-base md:text-lg font-bold leading-relaxed text-base-content">
                                     {probleme.enonce}
                                 </p>
@@ -204,19 +254,22 @@ const ProblemeEngine = ({ onBack }) => {
                                                 : 'border-base-200 bg-base-100'
                                         }`}>
                                             <div className="p-4 flex flex-col gap-3">
-                                                {/* Numéro + question */}
-                                                <div className="flex items-start gap-3">
-                                                    <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 font-black text-xs ${
-                                                        submitted
-                                                            ? isCorrect ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'
-                                                            : 'bg-primary/10 text-primary'
-                                                    }`}>
-                                                        {submitted
-                                                            ? isCorrect ? <CheckCircle2 size={14} /> : <XCircle size={14} />
-                                                            : i + 1
-                                                        }
+                                                {/* Numéro + question + lecteur vocal */}
+                                                <div className="flex items-start justify-between gap-3">
+                                                    <div className="flex items-start gap-3 flex-1">
+                                                        <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 font-black text-xs ${
+                                                            submitted
+                                                                ? isCorrect ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'
+                                                                : 'bg-primary/10 text-primary'
+                                                        }`}>
+                                                            {submitted
+                                                                ? isCorrect ? <CheckCircle2 size={14} /> : <XCircle size={14} />
+                                                                : i + 1
+                                                            }
+                                                        </div>
+                                                        <p className="font-semibold text-base-content leading-relaxed text-sm md:text-base pt-0.5">{q.question}</p>
                                                     </div>
-                                                    <p className="font-semibold text-base-content leading-relaxed text-sm md:text-base pt-0.5">{q.question}</p>
+                                                    <LecteurVocal texte={q.question} title="Écouter" variant="mini" />
                                                 </div>
 
                                                 {/* Saisie + correction */}
@@ -250,11 +303,14 @@ const ProblemeEngine = ({ onBack }) => {
                                                     )}
                                                 </div>
 
-                                                {/* Explication */}
+                                                {/* Explication / Procédure de résolution */}
                                                 {submitted && q.explication && (
-                                                    <div className="ml-10 flex items-start gap-2 bg-base-100/80 rounded-xl p-3 border border-base-200">
-                                                        <BrainCircuit size={14} className="text-primary shrink-0 mt-0.5" />
-                                                        <p className="text-xs text-base-content/70 font-medium italic leading-relaxed">{q.explication}</p>
+                                                    <div className="ml-10 flex items-start gap-2.5 bg-primary/5 dark:bg-base-200/50 rounded-2xl p-3.5 border border-primary/20">
+                                                        <BrainCircuit size={16} className="text-primary shrink-0 mt-0.5" />
+                                                        <div className="space-y-1">
+                                                            <p className="text-[11px] font-black uppercase tracking-wider text-primary">Démarche & Explication :</p>
+                                                            <p className="text-xs md:text-sm text-base-content/85 font-medium leading-relaxed">{q.explication}</p>
+                                                        </div>
                                                     </div>
                                                 )}
                                             </div>
@@ -329,7 +385,6 @@ const ProblemeEngine = ({ onBack }) => {
 
                 </div>
             </div>
-        </div>
     );
 };
 

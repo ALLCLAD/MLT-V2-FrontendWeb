@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Loader2, BrainCircuit, Trophy, ArrowRight, Timer, Lightbulb, Star, ChevronLeft, Sparkles, Pencil, LayoutGrid } from 'lucide-react';
+import { Loader2, BrainCircuit, Trophy, ArrowRight, Timer, Lightbulb, Star, ChevronLeft, Sparkles, Pencil, LayoutGrid, CheckCircle2, XCircle } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import api from '../../apiDjango/api.jsx';
 import { getMathyFeedback } from '../../apiDjango/aiService';
@@ -10,21 +10,17 @@ import BatonnetsComptage from '../../composants/UIenfant/BatonnetsComptage';
 import ExerciseRenderer from '../../composants/UIenfant/ExerciseRenderer';
 
 const CORRECT_PHRASES = [
-    "Super ! C'est ça.",
-    "Génial ! Tu as trouvé.",
-    "Excellent !",
-    "Bravo ! Tu es trop fort.",
-    "Magnifique !",
-    "Oui, c'est exact !"
+    "Bravo ! C'est la bonne réponse.",
+    "Super ! Tu as trouvé du premier coup.",
+    "Génial ! Excellent calcul.",
+    "Parfait ! Continue comme ça."
 ];
 
 const INCORRECT_PHRASES = [
-    "Tu y es presque, essaie encore !",
-    "Ce n'est pas grave, continue !",
-    "Ne baisse pas les bras !",
-    "Presque ! Tu vas y arriver.",
-    "Oups ! Mais tu apprends, c'est super.",
-    "Courage, réessaie !"
+    "Dommage ! Lis bien l'explication ci-dessous.",
+    "Pas de soucis ! Regarde la méthode ci-dessous.",
+    "Ne baisse pas les bras ! Lis l'explication en bas.",
+    "Presque ! Lis la démarche pour t'améliorer."
 ];
 
 // 🦴 SKELETON LOADERS
@@ -317,16 +313,9 @@ const FaireExercice = () => {
     };
 
     if (loading) return (
-        <div className="min-h-screen bg-base-200/30 p-4 font-sans flex items-center justify-center">
-            <div className="w-full max-w-4xl bg-base-100 rounded-[2.5rem] shadow-2xl border border-base-200 overflow-hidden min-h-[85vh] flex flex-col justify-between">
-                <div>
-                    <ExerciseHeaderSkeleton />
-                    <ExerciseContentSkeleton />
-                </div>
-                <div className="p-6 bg-base-200/30 border-t border-base-200 text-center animate-pulse">
-                    <div className="w-32 h-3 bg-base-300 rounded-full mx-auto"></div>
-                </div>
-            </div>
+        <div className="w-full max-w-4xl mx-auto bg-base-100 dark:bg-base-100 rounded-2xl shadow-sm border border-base-300/60 overflow-hidden flex flex-col min-h-[500px]">
+            <ExerciseHeaderSkeleton />
+            <ExerciseContentSkeleton />
         </div>
     );
 
@@ -349,7 +338,7 @@ const FaireExercice = () => {
                             setIsBrouillonOpen(!isBrouillonOpen);
                             if (!isBrouillonOpen) setIsBatonnetsOpen(false);
                         }}
-                        className={`btn btn-xs rounded-xl font-bold flex items-center gap-1 text-[10px] uppercase tracking-wider ${isBrouillonOpen ? 'btn-primary text-white shadow-xs' : 'bg-base-200/70 border-base-300/50'}`}
+                        className={`btn btn-xs rounded-xl font-bold flex items-center gap-1 text-[10px] uppercase tracking-wider ${isBrouillonOpen ? 'btn-primary text-white shadow-xs' : 'btn-outline btn-primary'}`}
                     >
                         <Pencil size={12} />
                         <span>Brouillon</span>
@@ -359,7 +348,7 @@ const FaireExercice = () => {
                             setIsBatonnetsOpen(!isBatonnetsOpen);
                             if (!isBatonnetsOpen) setIsBrouillonOpen(false);
                         }}
-                        className={`btn btn-xs rounded-xl font-bold flex items-center gap-1 text-[10px] uppercase tracking-wider ${isBatonnetsOpen ? 'btn-warning text-white shadow-xs' : 'bg-base-200/70 border-base-300/50'}`}
+                        className={`btn btn-xs rounded-xl font-bold flex items-center gap-1 text-[10px] uppercase tracking-wider ${isBatonnetsOpen ? 'btn-warning text-white shadow-xs' : 'btn-outline btn-warning'}`}
                     >
                         <LayoutGrid size={12} />
                         <span>Bâtonnets</span>
@@ -449,18 +438,34 @@ const FaireExercice = () => {
                             </button>
                         </div>
 
-                        {/* ZONE FEEDBACK */}
+                        {/* ZONE FEEDBACK AVEC EXPLICATION PAS À PAS EN BAS */}
                         {showFeedback && (
                             <div className="mt-6 animate-in slide-in-from-bottom-4 duration-300">
-                                <div className="bg-neutral text-neutral-content p-5 rounded-[2rem] shadow-xl">
-                                    <div className="flex items-center gap-4 mb-4">
-                                        <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shrink-0 text-primary-content">
-                                            <BrainCircuit size={20} />
+                                <div className="bg-neutral text-neutral-content p-5 rounded-[2rem] shadow-xl space-y-3">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-xs ${isCorrect ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'}`}>
+                                            {isCorrect ? <CheckCircle2 size={20} /> : <XCircle size={20} />}
                                         </div>
-                                        <p className="text-sm md:text-base font-bold italic flex-1">
-                                            {isAiLoading ? "Mathy écrit..." : aiFeedback}
+                                        <div>
+                                            <h4 className="font-black text-sm uppercase tracking-wide">
+                                                {isCorrect ? 'Excellente réponse !' : 'Oups, ce n\'est pas tout à fait ça !'}
+                                            </h4>
+                                            <p className="text-[11px] font-semibold opacity-70">
+                                                {isCorrect ? 'Découvre la méthode ci-dessous' : `Réponse attendue : ${exercices[currentIndex]?.reponse_correcte}`}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Petite explication pas à pas tout en bas */}
+                                    <div className="bg-base-100/10 p-4 rounded-2xl border border-white/10 text-xs md:text-sm font-medium leading-relaxed">
+                                        <p className="font-black text-amber-300 mb-1 flex items-center gap-1.5 uppercase text-[11px] tracking-wider">
+                                            <BrainCircuit size={16} /> Explication de la réponse :
+                                        </p>
+                                        <p className="text-white/90 italic">
+                                            {isAiLoading ? "Mathy analyse et rédige l'explication..." : (aiFeedback || exercices[currentIndex]?.explication || "Lis attentivement pour bien comprendre la démarche.")}
                                         </p>
                                     </div>
+
                                     <button onClick={handleNext} className="btn btn-primary btn-block rounded-2xl h-12 font-black shadow-lg">
                                         {currentIndex < exercices.length - 1 ? 'CONTINUER' : 'VOIR MON RÉSULTAT'} <ArrowRight size={18} className="ml-2" />
                                     </button>
@@ -496,34 +501,32 @@ const FaireExercice = () => {
     const isDockedToolOpen = isBrouillonOpen || isBatonnetsOpen;
 
     return (
-        <div className="space-y-5 font-sans antialiased">
-            <div className={`transition-all duration-300 ${isDockedToolOpen ? 'w-full' : 'max-w-4xl mx-auto'}`}>
-                <div className={`bg-base-100 dark:bg-base-100 rounded-2xl shadow-sm border border-base-300/60 overflow-hidden flex flex-col ${isDockedToolOpen ? 'lg:flex-row' : ''}`}>
-                    
-                    {/* ── COLONNE PRINCIPALE ── */}
-                    <div className="flex-1 flex flex-col min-h-[500px]">
-                        {cardContent}
-                    </div>
-
-                    {/* ── PANNEAU OUTIL DOCKÉ ── */}
-                    {isDockedToolOpen && (
-                        <div className="w-full lg:w-[380px] shrink-0 border-t lg:border-t-0 lg:border-l border-base-300/60 bg-base-200/40 p-4 flex flex-col h-[450px] lg:h-auto justify-stretch">
-                            {isBrouillonOpen && (
-                                <BrouillonCanvas
-                                    isOpen={isBrouillonOpen}
-                                    onClose={() => setIsBrouillonOpen(false)}
-                                />
-                            )}
-                            {isBatonnetsOpen && (
-                                <BatonnetsComptage
-                                    isOpen={isBatonnetsOpen}
-                                    onClose={() => setIsBatonnetsOpen(false)}
-                                />
-                            )}
-                        </div>
-                    )}
-
+        <div className={`transition-all duration-300 ${isDockedToolOpen ? 'w-full' : 'max-w-4xl mx-auto'}`}>
+            <div className={`bg-base-100 dark:bg-base-100 rounded-2xl shadow-sm border border-base-300/60 overflow-hidden flex flex-col ${isDockedToolOpen ? 'lg:flex-row' : ''}`}>
+                
+                {/* ── COLONNE PRINCIPALE ── */}
+                <div className="flex-1 flex flex-col min-h-[500px]">
+                    {cardContent}
                 </div>
+
+                {/* ── PANNEAU OUTIL DOCKÉ ── */}
+                {isDockedToolOpen && (
+                    <div className="w-full lg:w-[380px] shrink-0 border-t lg:border-t-0 lg:border-l border-base-300/60 bg-base-200/40 p-4 flex flex-col h-[450px] lg:h-auto justify-stretch">
+                        {isBrouillonOpen && (
+                            <BrouillonCanvas
+                                isOpen={isBrouillonOpen}
+                                onClose={() => setIsBrouillonOpen(false)}
+                            />
+                        )}
+                        {isBatonnetsOpen && (
+                            <BatonnetsComptage
+                                isOpen={isBatonnetsOpen}
+                                onClose={() => setIsBatonnetsOpen(false)}
+                            />
+                        )}
+                    </div>
+                )}
+
             </div>
         </div>
     );

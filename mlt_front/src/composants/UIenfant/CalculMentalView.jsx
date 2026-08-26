@@ -52,8 +52,8 @@ const CalculMentalView = ({ question, onResolve, disabled }) => {
     }, [inputValue, disabled]);
 
     return (
-        <div className="w-full max-w-sm mx-auto bg-base-100 p-6 rounded-3xl border border-base-200 shadow-xl flex flex-col items-center animate-in zoom-in-95 duration-300">
-            <span className="badge badge-error text-white font-black uppercase mb-6 py-3 tracking-widest text-[10px]">
+        <div className="w-full max-w-sm mx-auto flex flex-col items-center animate-in zoom-in-95 duration-300">
+            <span className="badge badge-error text-white font-black uppercase mb-4 py-3 tracking-widest text-[10px]">
                 Calcul Mental Rapide
             </span>
 

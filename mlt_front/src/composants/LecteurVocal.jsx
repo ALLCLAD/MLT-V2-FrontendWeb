@@ -3,7 +3,7 @@ import { Volume2, Play, Pause, RotateCcw, Loader2 } from 'lucide-react';
 import api from '../apiDjango/api.jsx';
 import { stopAllAudio, setCurrentAudio, setCurrentAbortController, registerInterruptCallback } from '../apiDjango/ttsService';
 
-const LecteurVocal = ({ texte }) => {
+const LecteurVocal = ({ texte, title = '', variant = 'full' }) => {
     const [isSpeaking, setIsSpeaking] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -348,6 +348,110 @@ const LecteurVocal = ({ texte }) => {
         
         jouerSegment(indexRef.current);
     };
+
+    if (variant === 'compact') {
+        return (
+            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-primary/10 via-indigo-500/10 to-primary/5 hover:from-primary/20 hover:to-indigo-500/15 border border-primary/25 hover:border-primary/50 rounded-full px-3.5 py-1.5 shadow-xs hover:shadow-md transition-all duration-200 text-xs font-black text-primary shrink-0 select-none">
+                {isLoading ? (
+                    <div className="flex items-center gap-2 text-primary">
+                        <Loader2 size={15} className="animate-spin" />
+                        <span className="text-[11px] font-black uppercase tracking-wider">Chargement...</span>
+                    </div>
+                ) : !isSpeaking ? (
+                    <button
+                        type="button"
+                        onClick={lire}
+                        className="flex items-center gap-2 text-primary hover:text-primary-dark group transition-colors"
+                        title={title || (isPaused ? "Reprendre la lecture" : "Cliquer pour écouter")}
+                    >
+                        <div className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center shadow-2xs group-hover:scale-110 transition-transform">
+                            <Play size={10} fill="currentColor" className="ml-0.5" />
+                        </div>
+                        <span className="text-[11px] font-black uppercase tracking-wider">
+                            {title || (isPaused ? "Reprendre" : "Écouter l'énoncé")}
+                        </span>
+                    </button>
+                ) : (
+                    <button
+                        type="button"
+                        onClick={pause}
+                        className="flex items-center gap-2 text-primary group transition-colors"
+                        title="Mettre en pause"
+                    >
+                        <div className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center shadow-2xs group-hover:scale-110 transition-transform">
+                            <Pause size={10} fill="currentColor" />
+                        </div>
+                        <span className="text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5">
+                            <span>Pause</span>
+                            <span className="flex gap-0.5 items-end h-2.5">
+                                <span className="w-0.5 h-full bg-primary animate-bounce rounded-full" style={{ animationDelay: '0ms' }} />
+                                <span className="w-0.5 h-2/3 bg-primary animate-bounce rounded-full" style={{ animationDelay: '150ms' }} />
+                                <span className="w-0.5 h-full bg-primary animate-bounce rounded-full" style={{ animationDelay: '300ms' }} />
+                            </span>
+                        </span>
+                    </button>
+                )}
+
+                {(isSpeaking || isPaused) && (
+                    <div className="flex items-center border-l border-primary/20 pl-2 ml-0.5">
+                        <button
+                            type="button"
+                            onClick={stop}
+                            className="text-base-content/50 hover:text-error hover:bg-error/10 p-1 rounded-full transition-colors flex items-center gap-1"
+                            title="Recommencer depuis le début"
+                        >
+                            <RotateCcw size={13} />
+                            <span className="text-[10px] font-bold uppercase hidden sm:inline">Recommencer</span>
+                        </button>
+                    </div>
+                )}
+            </div>
+        );
+    }
+
+    if (variant === 'mini') {
+        return (
+            <div className="inline-flex items-center gap-1 shrink-0 select-none">
+                {isLoading ? (
+                    <div className="px-2.5 py-1 rounded-full bg-primary/10 text-primary flex items-center gap-1.5 text-[11px] font-bold">
+                        <Loader2 size={12} className="animate-spin" />
+                        <span>Chargement</span>
+                    </div>
+                ) : !isSpeaking ? (
+                    <button
+                        type="button"
+                        onClick={lire}
+                        className="group flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/20 hover:border-primary font-black text-[11px] uppercase tracking-wider transition-all duration-200 shadow-2xs hover:shadow-xs active:scale-95"
+                        title={title || "Écouter la question"}
+                    >
+                        <Volume2 size={13} className="group-hover:scale-110 transition-transform" />
+                        <span>{title || (isPaused ? "Reprendre" : "Écouter")}</span>
+                    </button>
+                ) : (
+                    <button
+                        type="button"
+                        onClick={pause}
+                        className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary text-white border border-primary font-black text-[11px] uppercase tracking-wider transition-all duration-200 shadow-xs active:scale-95"
+                        title="Mettre en pause"
+                    >
+                        <Pause size={12} fill="currentColor" />
+                        <span className="animate-pulse">Pause</span>
+                    </button>
+                )}
+
+                {(isSpeaking || isPaused) && (
+                    <button
+                        type="button"
+                        onClick={stop}
+                        className="p-1 rounded-full text-base-content/40 hover:text-error hover:bg-error/10 transition-colors"
+                        title="Recommencer"
+                    >
+                        <RotateCcw size={12} />
+                    </button>
+                )}
+            </div>
+        );
+    }
 
     return (
         <div className="flex items-center gap-4 bg-primary/10 p-5 rounded-[2rem] border-2 border-primary/20 mb-8 animate-in fade-in zoom-in duration-500">

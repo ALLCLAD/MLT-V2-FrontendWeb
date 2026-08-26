@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BookOpen, HelpCircle } from 'lucide-react';
+import LecteurVocal from '../LecteurVocal';
 
 const ProblemeView = ({ question, onResolve, disabled }) => {
     // Ex de donnees: {"operation_attendue": "multiplication", "unite": "FCFA"}
@@ -62,9 +63,12 @@ const ProblemeView = ({ question, onResolve, disabled }) => {
                     }}
                 />
                 
-                <div className="relative z-10">
-                    <div className="flex items-center gap-2 text-amber-800 font-black mb-4 uppercase tracking-wider text-xs">
-                        <BookOpen size={16} /> Énoncé du problème
+                <div className="relative z-10 space-y-3">
+                    <div className="flex items-center justify-between gap-2 mb-4">
+                        <div className="flex items-center gap-2 text-amber-800 font-black uppercase tracking-wider text-xs">
+                            <BookOpen size={16} /> Énoncé du problème
+                        </div>
+                        <LecteurVocal texte={questionText} title="Écouter" variant="compact" />
                     </div>
                     <p className="text-lg md:text-xl font-bold leading-relaxed text-slate-800 italic">
                         "{questionText}"

@@ -11,6 +11,13 @@ let cachedActiveModels = null;
 let lastFetchTime = 0;
 const CACHE_DURATION_MS = 10 * 60 * 1000; // Cache 10 minutes
 
+const PREFERRED_CHAT_MODELS = [
+    "llama-3.3-70b-versatile",
+    "llama-3.1-8b-instant",
+    "gemma2-9b-it",
+    "mixtral-8x7b-32768"
+];
+
 /**
  * Récupère dynamiquement la liste des modèles chat actifs sur le compte Groq
  */
@@ -23,26 +30,34 @@ const getActiveGroqModels = async () => {
     try {
         const response = await groq.models.list();
         const models = response.data || [];
-        // Filtrer les modèles actifs (exclure ceux marqués décommissionnés ou whisper/embeddings)
+        // Filtrer les modèles chat valides (exclure guard, whisper, specdec, safetensors, etc.)
         const activeModels = models
-            .filter(m => m.active !== false && !m.id.includes('whisper') && !m.id.includes('safetensors') && !m.id.includes('tool-use'))
+            .filter(m => m.active !== false && 
+                !m.id.includes('whisper') && 
+                !m.id.includes('safetensors') && 
+                !m.id.includes('tool-use') &&
+                !m.id.includes('guard') &&
+                !m.id.includes('specdec') &&
+                !m.id.includes('embedding')
+            )
             .map(m => m.id);
 
-        if (activeModels.length > 0) {
-            cachedActiveModels = activeModels;
+        const sortedModels = [
+            ...PREFERRED_CHAT_MODELS.filter(p => activeModels.includes(p)),
+            ...activeModels.filter(m => !PREFERRED_CHAT_MODELS.includes(m))
+        ];
+
+        if (sortedModels.length > 0) {
+            cachedActiveModels = sortedModels;
             lastFetchTime = now;
-            console.log("[Groq AI] Modèles actifs récupérés dynamiquement :", cachedActiveModels);
+            console.log("[Groq AI] Modèles chat valides ordonnés :", cachedActiveModels);
             return cachedActiveModels;
         }
     } catch (err) {
-        console.warn("[Groq AI] Impossible d'interroger l'endpoint /models, utilisation des secours par défaut :", err?.message);
+        console.warn("[Groq AI] Impossible d'interroger /models, secours sur modèles préférés :", err?.message);
     }
 
-    // Liste de secours par défaut en cas de problème réseau d'inspection
-    return [
-        "llama-3.3-70b-versatile",
-        "llama-3.1-8b-instant"
-    ];
+    return PREFERRED_CHAT_MODELS;
 };
 
 /**
@@ -62,24 +77,7 @@ const createCompletionWithFallback = async (params) => {
         } catch (err) {
             lastError = err;
             const errMsg = err?.message || '';
-            const errCode = err?.code || err?.status || '';
-
-            // Si le modèle sélectionné renvoie une erreur de dépréciation/not_found, invalider et essayer le suivant
-            if (
-                errCode === 'model_decommissioned' ||
-                errCode === 'model_not_found' ||
-                errCode === 404 ||
-                errCode === 400 ||
-                errMsg.includes('decommissioned') ||
-                errMsg.includes('does not exist') ||
-                errMsg.includes('not_found')
-            ) {
-                console.warn(`[Groq AI] Le modèle "${modelCandidate}" a échoué (${errMsg}). Bascule sur le modèle suivant...`);
-                continue;
-            }
-
-            // Si c'est une autre erreur bloquante, poursuivre vers le modèle suivant au lieu de faire planter
-            console.error(`[Groq AI] Erreur avec "${modelCandidate}" :`, errMsg);
+            console.warn(`[Groq AI] Échec du modèle "${modelCandidate}" (${errMsg}). Essai du modèle suivant...`);
         }
     }
 
@@ -367,4 +365,57 @@ export const genererReponseExercice = async (question, classe) => {
         console.error("Erreur Groq génération réponse:", error);
         return null;
     }
+};
+
+/**
+ * FONCTION 5 : Génération de la Procédure Complète de résolution pour un Problème
+ */
+export const getProblemeProcedure = async (probleme, userAnswers, totalScore) => {
+    try {
+        const questionsList = (probleme.questions || []).map((q, i) => {
+            const userAns = userAnswers[q.sous_id] || 'Non répondu';
+            return `Étape ${i + 1} - Question: "${q.question}" | Réponse choisie par l'élève: "${userAns}" | Réponse correcte attendue: "${q.reponse_correcte} ${q.unite || ''}" | Explication pédagogique: "${q.explication || ''}"`;
+        }).join('\n');
+
+        const prompt = `Problème de mathématiques :
+Énoncé du problème : "${probleme.enonce}"
+
+Détail des étapes et questions :
+${questionsList}
+
+Résultat de l'élève : ${totalScore} bonne(s) réponse(s) sur ${probleme.questions.length}.
+
+Consigne : Rédige la PROCÉDURE COMPLÈTE et détaillée de résolution étape par étape pour ce problème.
+Explique clairement chaque étape du calcul, les opérations à effectuer et le raisonnement pour arriver aux bons résultats.
+Tu t'adresses à l'enfant de manière claire, structurée et pédagogique. N'utilise AUCUN émoji.`;
+
+        const completion = await createCompletionWithFallback({
+            messages: [
+                {
+                    role: "system",
+                    content: "Tu es Mathy, tuteur de mathématiques. Rédige une procédure de résolution étape par étape claire, complète et pédagogique pour l'élève. N'utilise jamais d'émojis."
+                },
+                {
+                    role: "user",
+                    content: prompt
+                }
+            ],
+            temperature: 0.5,
+            max_tokens: 600,
+        });
+
+        const reply = completion.choices[0]?.message?.content;
+        if (reply) return reply;
+    } catch (err) {
+        console.warn("[Groq AI] Impossible de générer la procédure via AI, secours sur procédure locale :", err);
+    }
+
+    // Procédure locale de secours en cas de hors-ligne ou d'erreur API
+    return `Procédure complète de résolution du problème :
+
+Énoncé : ${probleme.enonce}
+
+${(probleme.questions || []).map((q, i) => `Étape ${i + 1} : ${q.question}
+• Démarche & Calcul : ${q.explication || `Effectuer le calcul approprié pour obtenir ${q.reponse_correcte} ${q.unite || ''}.`}
+• Résultat exact : ${q.reponse_correcte} ${q.unite || ''}`).join('\n\n')}`;
 };

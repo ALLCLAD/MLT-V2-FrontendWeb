@@ -4,6 +4,7 @@ import confetti from 'canvas-confetti';
 import api from '../../apiDjango/api.jsx';
 import { getMathyFeedback } from '../../apiDjango/aiService';
 import { speakTextSafe, stopAllAudio } from '../../apiDjango/ttsService';
+import LecteurVocal from '../../composants/LecteurVocal';
 import CalculEcritView from '../../composants/UIenfant/CalculEcritView';
 import BrouillonCanvas from '../../composants/UIenfant/BrouillonCanvas';
 import BatonnetsComptage from '../../composants/UIenfant/BatonnetsComptage';
@@ -159,13 +160,48 @@ const CalculEcritEngine = ({ onBack }) => {
         }
     };
 
+const ExerciseHeaderSkeleton = () => (
+    <div className="px-6 py-4 flex justify-between items-center border-b border-base-200 bg-gradient-to-r from-base-100 to-base-200/20 animate-pulse">
+        <div className="w-16 h-5 bg-base-300 rounded-lg"></div>
+        <div className="flex gap-1">
+            <div className="w-5 h-5 bg-base-300 rounded-full"></div>
+            <div className="w-5 h-5 bg-base-300 rounded-full"></div>
+            <div className="w-5 h-5 bg-base-300 rounded-full"></div>
+        </div>
+    </div>
+);
+
+const ExerciseContentSkeleton = () => (
+    <div className="flex-1 p-6 md:p-8 flex flex-col items-center space-y-8 animate-pulse w-full">
+        <div className="w-full max-w-2xl space-y-2">
+            <div className="flex justify-between">
+                <div className="w-28 h-4 bg-base-300 rounded-lg"></div>
+                <div className="w-12 h-4 bg-base-300 rounded-lg"></div>
+            </div>
+            <div className="w-full h-3 bg-base-300 rounded-full"></div>
+        </div>
+        <div className="w-full max-w-2xl text-center py-6 space-y-2">
+            <div className="w-3/4 h-8 bg-base-300 rounded-xl mx-auto"></div>
+            <div className="w-1/2 h-6 bg-base-300 rounded-xl mx-auto"></div>
+        </div>
+        <div className="w-full max-w-2xl flex flex-col md:flex-row items-center gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 w-full">
+                <div className="h-16 bg-base-300 rounded-2xl w-full"></div>
+                <div className="h-16 bg-base-300 rounded-2xl w-full"></div>
+                <div className="h-16 bg-base-300 rounded-2xl w-full"></div>
+                <div className="h-16 bg-base-300 rounded-2xl w-full"></div>
+            </div>
+            <div className="w-20 h-20 bg-base-300 rounded-3xl shrink-0"></div>
+        </div>
+        <div className="w-16 h-16 bg-base-300 rounded-full mx-auto"></div>
+    </div>
+);
+
     // ── CHARGEMENT ─────────────────────────────────────────────────────────────
     if (loading) return (
-        <div className="min-h-screen bg-base-200/30 flex items-center justify-center">
-            <div className="flex flex-col items-center gap-3">
-                <Loader2 size={40} className="text-primary animate-spin" />
-                <p className="font-black text-base-content/50 uppercase tracking-widest text-xs">Chargement...</p>
-            </div>
+        <div className="w-full max-w-4xl mx-auto bg-base-100 dark:bg-base-100 rounded-2xl shadow-sm border border-base-300/60 overflow-hidden flex flex-col min-h-[500px]">
+            <ExerciseHeaderSkeleton />
+            <ExerciseContentSkeleton />
         </div>
     );
 
@@ -237,9 +273,8 @@ const CalculEcritEngine = ({ onBack }) => {
     const opSymbol = q.operation === 'addition' ? '+' : q.operation === 'soustraction' ? '−' : q.operation === 'multiplication' ? '×' : '÷';
 
     return (
-        <div className="min-h-screen bg-base-200/30 p-4 font-sans flex items-start justify-center pt-6">
-            <div className={`w-full transition-all duration-300 ${anyOpen ? 'max-w-[1400px]' : 'max-w-5xl'}`}>
-                <div className={`bg-base-100 rounded-[2.5rem] shadow-2xl border border-base-200 overflow-hidden flex flex-col ${anyOpen ? 'lg:flex-row' : ''}`}>
+        <div className={`transition-all duration-300 ${anyOpen ? 'w-full' : 'max-w-4xl mx-auto'}`}>
+            <div className={`bg-base-100 rounded-2xl shadow-sm border border-base-300/60 overflow-hidden flex flex-col ${anyOpen ? 'lg:flex-row' : ''}`}>
 
                     {/* ── COLONNE PRINCIPALE ── */}
                     <div className="flex-1 flex flex-col">
@@ -300,10 +335,17 @@ const CalculEcritEngine = ({ onBack }) => {
                         {/* CORPS */}
                         <div className="flex-1 p-6 md:p-8 flex flex-col items-center gap-6">
 
-                            {/* Consigne */}
-                            <p className="text-base md:text-lg font-bold text-base-content text-center leading-relaxed max-w-lg">
-                                {q.consigne}
-                            </p>
+                            {/* Consigne + Bouton d'écoute vocal */}
+                            <div className="flex flex-col sm:flex-row items-center gap-3 bg-base-200/40 p-4 rounded-2xl border border-base-200/60 max-w-xl w-full justify-between">
+                                <p className="text-base md:text-lg font-bold text-base-content leading-relaxed text-center sm:text-left flex-1">
+                                    {q.consigne || q.question || `Pose et effectue l'opération : ${q.operande_gauche} ${opSymbol} ${q.operande_droit}`}
+                                </p>
+                                <LecteurVocal 
+                                    texte={q.consigne || q.question || `Pose et effectue l'opération : ${q.operande_gauche} ${opSymbol} ${q.operande_droit}`} 
+                                    title="Écouter" 
+                                    variant="compact" 
+                                />
+                            </div>
 
                             {/* Grille de calcul ou feedback */}
                             {!showFeedback ? (
@@ -400,7 +442,6 @@ const CalculEcritEngine = ({ onBack }) => {
 
                 </div>
             </div>
-        </div>
     );
 };
 
