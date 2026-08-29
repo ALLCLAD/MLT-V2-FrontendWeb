@@ -38,7 +38,11 @@ const getActiveGroqModels = async () => {
                 !m.id.includes('tool-use') &&
                 !m.id.includes('guard') &&
                 !m.id.includes('specdec') &&
-                !m.id.includes('embedding')
+                !m.id.includes('embedding') &&
+                !m.id.includes('r1') &&
+                !m.id.includes('qwq') &&
+                !m.id.includes('reasoning') &&
+                !m.id.includes('distill')
             )
             .map(m => m.id);
 
@@ -58,6 +62,53 @@ const getActiveGroqModels = async () => {
     }
 
     return PREFERRED_CHAT_MODELS;
+};
+
+/**
+ * Nettoie la réponse de l'IA pour éliminer toutes les traces de réflexion / CoT (balises <think>,
+ * sections "1. Analyze User Input", "2. Deconstruct...", "3. Draft Generation", "4. Check Constraints", etc.)
+ * et ne conserver que le texte pur de la leçon finalisée.
+ */
+const cleanAIResponse = (text) => {
+    if (!text) return "";
+
+    let cleaned = text;
+
+    // 1. Supprimer les balises <think>...</think> (DeepSeek-R1, Qwen-QwQ)
+    cleaned = cleaned.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+
+    // 2. Éliminer la section de vérification finale si présente (ex: "4. Check Constraints:")
+    const checkConstraintsMatch = cleaned.search(/(?:\n|^)\s*\d*[\.\s-]*\*?\*?Check Constraints\*?\*?/i);
+    if (checkConstraintsMatch > 0) {
+        cleaned = cleaned.substring(0, checkConstraintsMatch).trim();
+    }
+
+    // 3. Si l'IA inclut des phases de réflexion/brouillon (ex: "1. Analyze...", "3. Draft Generation..."),
+    // se positionner après le marqueur de rédaction "Draft" s'il existe
+    const draftMatch = cleaned.search(/(?:\n|^)\s*\d*[\.\s-]*\*?\*?Draft(?: Generation)?\b/i);
+    if (draftMatch !== -1) {
+        cleaned = cleaned.substring(draftMatch).trim();
+    }
+
+    // 4. Se positionner au vrai premier titre de la leçon Markdown ("## 1.", "*## 1.", "# 1.", "## Introduction")
+    const headerMatch = cleaned.search(/(?:^|\n)\s*\*?#+\s*(?:1[\.\s-]|1\b|\bIntroduction\b)/i);
+    if (headerMatch !== -1) {
+        cleaned = cleaned.substring(headerMatch).trim();
+    } else {
+        // Fallback: chercher la première occurrence de "## " ou "*## "
+        const h2Match = cleaned.search(/(?:^|\n)\s*\*?##\s+/);
+        if (h2Match !== -1) {
+            cleaned = cleaned.substring(h2Match).trim();
+        }
+    }
+
+    // 5. Nettoyer les balises de code Markdown (```) si la leçon a été entourée d'un bloc de code
+    cleaned = cleaned.replace(/^```[a-z]*\n?/i, "").replace(/\n?```$/g, "").trim();
+
+    // 6. Corriger les astérisques d'encadrement sur un titre (ex: *## 1. Intro* -> ## 1. Intro)
+    cleaned = cleaned.replace(/^\*+(#+\s+.*)\*+$/gm, '$1');
+
+    return cleaned;
 };
 
 /**
@@ -166,10 +217,11 @@ export const genererContenuLecon = async (titre, description, classe) => {
                     - Utilise des exemples togolais concrets et réels (marché, francs CFA, prénoms locaux).
                     - Évite les phrases générales et le blabla inutile, va droit au concept mathématique concret.
                     
-                    INTERDICTION STRICTE :
-                    - Ne mets AUCUN émoji dans ton texte. Les émojis sont strictly interdits.
+                    INTERDICTIONS STRICTES :
+                    - Ne mets AUCUN émoji dans ton texte. Les émojis sont strictement interdits.
+                    - NE RÉDIGE AUCUNE ÉTAPE DE PENSÉE NI DE BROUILLON : Interdiction d'inclure des parties d'analyse comme "Analyze User Input", "Deconstruct Constraints", "Draft", ou "Check Constraints". Réponds UNIQUEMENT et DIRECTEMENT par la leçon finalisée en Markdown en commençant par "## 1. Introduction".
 
-                    STRUCTURE OBLIGATOIRE (Titres en chiffres romains) :
+                    STRUCTURE OBLIGATOIRE :
                     ## 1. Introduction
                     (Une phrase d'accroche directe et claire)
                     
@@ -188,14 +240,15 @@ export const genererContenuLecon = async (titre, description, classe) => {
                 },
                 {
                     role: "user",
-                    content: `Écris une leçon courte (max 250 mots) pour moi. Titre : "${titre}". Description : "${description}".`
+                    content: `Écris uniquement la leçon au format Markdown final. Titre : "${titre}". Description : "${description}".`
                 }
             ],
             temperature: 0.7,
             max_tokens: 600,
         });
 
-        return completion.choices[0]?.message?.content;
+        const rawContent = completion.choices[0]?.message?.content;
+        return cleanAIResponse(rawContent);
     } catch (error) {
         console.error("Erreur Groq génération leçon:", error);
         return null;
@@ -234,10 +287,11 @@ export const genererContenuLeconDepuisDocument = async (titre, classe, documentT
                     ## 4. À retenir
                     (2-3 points clés concrets)
 
-                    CONTRAINTES :
+                    CONTRAINTES ET INTERDICTIONS :
                     - Maximum 300 mots.
                     - Parle directement à l'enfant avec "tu".
-                    - ZERO EMOJI : N'inclus aucun émoji dans tout ton texte. Les émojis sont strictement interdits.`
+                    - ZERO EMOJI : N'inclus aucun émoji dans tout ton texte. Les émojis sont strictement interdits.
+                    - NE RÉDIGE AUCUNE ÉTAPE DE PENSÉE NI DE BROUILLON : Interdiction d'inclure des parties d'analyse comme "Analyze User Input", "Deconstruct Constraints", "Draft", ou "Check Constraints". Réponds UNIQUEMENT et DIRECTEMENT par la leçon finalisée en Markdown en commençant par "## 1. Introduction".`
                 },
                 {
                     role: "user",
@@ -247,14 +301,15 @@ ${consignes ? `Consignes de l'enseignant : ${consignes}\n` : ''}Contenu brut du 
 ---
 ${texteLimité}
 ---
-Réécris ce contenu en Markdown pédagogique clair.`
+Génère directement et uniquement le cours final en Markdown.`
                 }
             ],
             temperature: 0.6,
             max_tokens: 700,
         });
 
-        return completion.choices[0]?.message?.content;
+        const rawContent = completion.choices[0]?.message?.content;
+        return cleanAIResponse(rawContent);
     } catch (error) {
         console.error("Erreur Groq reformatage document:", error);
         return null;
@@ -407,7 +462,7 @@ ${questionsList}`;
         });
 
         const reply = completion.choices[0]?.message?.content;
-        if (reply) return reply;
+        if (reply) return cleanAIResponse(reply);
     } catch (err) {
         console.warn("[Groq AI] Impossible de générer la procédure via AI, secours sur procédure locale :", err);
     }
